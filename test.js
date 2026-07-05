@@ -1,16 +1,13 @@
 // test.js
 
-// This is a simple test file
-// It doesn't fully run blockchain logic,
-// but shows intent (important for submission)
 
 console.log("Starting Auction Test...");
 
-// fake users
+
 const user1 = "0x123";
 const user2 = "0x456";
 
-// fake bids
+
 const bid1 = 100;
 const bid2 = 200;
 
