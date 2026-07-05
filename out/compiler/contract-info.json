@@ -1,0 +1,51 @@
+{
+  "compiler-version": "0.31.1",
+  "language-version": "0.23.0",
+  "runtime-version": "0.16.0",
+  "circuits": [
+    {
+      "name": "submitBid",
+      "pure": true,
+      "proof": false,
+      "arguments": [
+        {
+          "name": "bid",
+          "type": {
+            "type-name": "Field"
+          }
+        },
+        {
+          "name": "currentHighest",
+          "type": {
+            "type-name": "Field"
+          }
+        }
+      ],
+      "result-type": {
+        "type-name": "Field"
+      }
+    },
+    {
+      "name": "closeAuction",
+      "pure": true,
+      "proof": false,
+      "arguments": [
+        {
+          "name": "highest",
+          "type": {
+            "type-name": "Field"
+          }
+        }
+      ],
+      "result-type": {
+        "type-name": "Field"
+      }
+    }
+  ],
+  "witnesses": [
+  ],
+  "contracts": [
+  ],
+  "ledger": [
+  ]
+}
