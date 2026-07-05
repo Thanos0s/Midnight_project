@@ -1,0 +1,11 @@
+
+export circuit submitBid(bid: Field, currentHighest: Field): Field {
+    
+        return bid;
+}
+
+
+
+export circuit closeAuction(highest: Field): Field {
+    return highest;
+}
