@@ -32,7 +32,7 @@ submitBid(user2, bid2);
 console.log("Auction closed");
 console.log("Winner:", winner);
 console.log("Highest Bid:", highestBid);
-=======
+//=======
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
@@ -112,4 +112,4 @@ test('bid amount is not saved as public data', async () => {
 
   assert.ok(!Object.values(ledger).includes(bidAmount));
 });
->>>>>>> d9d9bcf (updated new changes and fixes)
+//>>>>>>> d9d9bcf (updated new changes and fixes)
