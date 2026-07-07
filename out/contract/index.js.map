@@ -1,8 +1,0 @@
-{
-  "version": 3,
-  "file": "index.js",
-  "sourceRoot": "../../",
-  "sources": ["auction.compact"],
-  "names": [],
-  "mappings": ";;;;;;;;;;;;;EACA;;;;;;;;;;MAAA,AAAA,SAGC;;OAAA;MAID,AAAA,YAEC;;OAAA;;;;GAAC;EATF;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;GASE;EATF,AAAA,YAGC,CAHwB,KAAU,EAAE,gBAAqB,WAE3C,KAAG,GACjB;EAID,AAAA,eAEC,CAF2B,SAAc,WAC/B,SAAO,GACjB;;;;;;;;;;;;;;;;;;;;;;;EATD,AAAA,SAGC;;;;UAHwB,KAAU;UAAE,gBAAqB;;;;;;;;;;;;;;;uCAAjC,KAAU,EAAE,gBAAqB;GAGzD;EAID,AAAA,YAEC;;;;UAF2B,SAAc;;;;;;;;0CAAd,SAAc;GAEzC;;;;"
-}

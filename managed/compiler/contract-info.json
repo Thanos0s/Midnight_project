@@ -5,47 +5,154 @@
   "circuits": [
     {
       "name": "submitBid",
-      "pure": true,
-      "proof": false,
+      "pure": false,
+      "proof": true,
       "arguments": [
-        {
-          "name": "bid",
-          "type": {
-            "type-name": "Field"
-          }
-        },
-        {
-          "name": "currentHighest",
-          "type": {
-            "type-name": "Field"
-          }
-        }
       ],
       "result-type": {
-        "type-name": "Field"
+        "type-name": "Tuple",
+        "types": [
+        ]
       }
     },
     {
       "name": "closeAuction",
-      "pure": true,
-      "proof": false,
+      "pure": false,
+      "proof": true,
       "arguments": [
         {
-          "name": "highest",
+          "name": "secretKey",
           "type": {
-            "type-name": "Field"
+            "type-name": "Bytes",
+            "length": 32
+          }
+        },
+        {
+          "name": "price",
+          "type": {
+            "type-name": "Uint",
+            "maxval": 18446744073709551615
           }
         }
       ],
       "result-type": {
-        "type-name": "Field"
+        "type-name": "Tuple",
+        "types": [
+        ]
+      }
+    },
+    {
+      "name": "agentPublicKey",
+      "pure": true,
+      "proof": false,
+      "arguments": [
+        {
+          "name": "sk",
+          "type": {
+            "type-name": "Bytes",
+            "length": 32
+          }
+        }
+      ],
+      "result-type": {
+        "type-name": "Bytes",
+        "length": 32
       }
     }
   ],
   "witnesses": [
+    {
+      "name": "myBidAmount",
+      "arguments": [
+      ],
+      "result type": {
+        "type-name": "Uint",
+        "maxval": 18446744073709551615
+      }
+    }
   ],
   "contracts": [
   ],
   "ledger": [
+    {
+      "name": "state",
+      "index": 0,
+      "exported": true,
+      "storage": "Cell",
+      "type": {
+        "type-name": "Enum",
+        "name": "AuctionState",
+        "elements": [
+          "OPEN",
+          "CLOSED"
+        ]
+      }
+    },
+    {
+      "name": "taskId",
+      "index": 1,
+      "exported": true,
+      "storage": "Cell",
+      "type": {
+        "type-name": "Bytes",
+        "length": 32
+      }
+    },
+    {
+      "name": "bidCount",
+      "index": 2,
+      "exported": true,
+      "storage": "Counter"
+    },
+    {
+      "name": "winner",
+      "index": 3,
+      "exported": true,
+      "storage": "Cell",
+      "type": {
+        "type-name": "Struct",
+        "name": "Maybe",
+        "elements": [
+          {
+            "name": "is_some",
+            "type": {
+              "type-name": "Boolean"
+            }
+          },
+          {
+            "name": "value",
+            "type": {
+              "type-name": "Bytes",
+              "length": 32
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "winningPrice",
+      "index": 4,
+      "exported": true,
+      "storage": "Cell",
+      "type": {
+        "type-name": "Struct",
+        "name": "Maybe",
+        "elements": [
+          {
+            "name": "is_some",
+            "type": {
+              "type-name": "Boolean"
+            }
+          },
+          {
+            "name": "value",
+            "type": {
+              "type-name": "Uint",
+              "maxval": 18446744073709551615
+            }
+          }
+        ]
+      }
+    }
   ]
 }

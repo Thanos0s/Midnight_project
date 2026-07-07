@@ -1,0 +1,27 @@
+{
+  "name": "project",
+  "version": "1.0.0",
+  "description": "Simple private bid contract test project.",
+  "main": "test.js",
+  "scripts": {
+    "test": "node --test test.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Thanos0s/Midnight_project.git"
+  },
+  "keywords": [
+    "midnight",
+    "compact"
+  ],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "bugs": {
+    "url": "https://github.com/Thanos0s/Midnight_project/issues"
+  },
+  "homepage": "https://github.com/Thanos0s/Midnight_project#readme",
+  "dependencies": {
+    "@midnight-ntwrk/compact-runtime": "^0.16.0"
+  }
+}
