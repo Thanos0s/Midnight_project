@@ -1,0 +1,41 @@
+pragma language_version >=0.22;
+
+import CompactStandardLibrary;
+
+export enum AuctionState {
+  OPEN,
+  CLOSED
+}
+
+export ledger state: AuctionState;
+export ledger taskId: Bytes<32>;
+export ledger bidCount: Counter;
+export ledger winner: Maybe<Bytes<32>>;
+export ledger winningPrice: Maybe<Uint<64>>;
+
+constructor(id: Bytes<32>) {
+  state = AuctionState.OPEN;
+  taskId = disclose(id);
+  winner = none<Bytes<32>>();
+  winningPrice = none<Uint<64>>();
+}
+
+witness myBidAmount(): Uint<64>;
+
+export circuit submitBid(): [] {
+  assert(state == AuctionState.OPEN, "Auction is not open for bids");
+  const bid = myBidAmount();
+  bidCount.increment(1);
+}
+
+export circuit closeAuction(secretKey: Bytes<32>, price: Uint<64>): [] {
+  assert(state == AuctionState.OPEN, "Auction already closed");
+  const key = agentPublicKey(secretKey);
+  winner = disclose(some<Bytes<32>>(key));
+  winningPrice = disclose(some<Uint<64>>(price));
+  state = AuctionState.CLOSED;
+}
+
+export circuit agentPublicKey(sk: Bytes<32>): Bytes<32> {
+  return persistentHash<Vector<2, Bytes<32>>>([pad(32, "auction:pk:"), sk]);
+}
