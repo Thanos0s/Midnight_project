@@ -36,3 +36,5 @@ node --test test.js
 `witness` is private data.
 
 `disclose()` makes a value public.
+
+Contract Address: 3f7120a63f93a92fe4becf81f72859878d72da76ff1591d541c73bbb0a286dc7
