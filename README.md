@@ -37,4 +37,13 @@ node --test test.js
 
 `disclose()` makes a value public.
 
-Contract Address: 3f7120a63f93a92fe4becf81f72859878d72da76ff1591d541c73bbb0a286dc7
+## Project Structure vs Deployment Folder
+
+- **`project/` (This folder)**: The main smart contract development folder. It is where you write contract code (`auction.compact`), define witnesses (`witnesses.js`), and run unit tests (`test.js`).
+- **`auction-deploy/` (Sibling folder)**: The deployment infrastructure. It contains Docker Compose configurations to run a local Midnight network (node, indexer, proof-server) and the TypeScript code to compile, fund, and deploy the contract.
+
+## Deployed contract address
+
+Network: local docker
+Address: b20f8f836047ce33353b13e1e85d8dc95a55f306e876cb7b822bbaad4bb1acf6
+
