@@ -104,14 +104,14 @@ export const App: React.FC = () => {
                 </p>
                 <div style={{ display: 'flex', gap: '16px' }}>
                   <button className="corda-btn-orange" onClick={() => triggerConsole('bidder')}>
-                    🟢 Join Auction
+                     <strong>Join Auction</strong>
                   </button>
                   <button
                     className="corda-btn-pill"
                     style={{ padding: '14px 28px', border: '1px solid rgba(255,255,255,0.4)', borderRadius: '9999px' }}
                     onClick={() => triggerConsole('host')}
                   >
-                    🔵 Create Auction
+                    <strong>Create Auction</strong>
                   </button>
                 </div>
               </div>
@@ -130,17 +130,17 @@ export const App: React.FC = () => {
 
             {/* Launch Banner */}
             <div className="partner-banner">
-              <span className="partner-logo">SOLANA</span>
+              <span className="partner-logo"></span>
               <span className="partner-logo" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
                 <span style={{ border: '1px solid #1a1a1c', borderRadius: '50%', width: '14px', height: '14px', display: 'inline-block' }} />
-                MIDNIGHT
+                
               </span>
               <span className="partner-logo" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
                 <span style={{ border: '1.5px solid #1a1a1c', width: '12px', height: '12px', display: 'inline-block', transform: 'rotate(45deg)' }} />
-                SOLSTICE
+                
               </span>
-              <span className="partner-logo">Alphaledger.</span>
-              <span className="partner-logo" style={{ fontWeight: 800 }}>Particula</span>
+              <span className="partner-logo"></span>
+              <span className="partner-logo" style={{ fontWeight: 800 }}></span>
             </div>
 
             {/* Section 2: High Uncorrelated Yield */}
