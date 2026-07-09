@@ -3,7 +3,7 @@
 > Zero-knowledge sealed-bid auctions on the Midnight Network. Your bid, your secret.
 
 ## Live Demo
-[PASTE YOUR LIVE DEMO URL HERE AFTER DEPLOYING FRONTEND]
+https://midnight-project-ten.vercel.app/
 
 ## Contract Address
 
