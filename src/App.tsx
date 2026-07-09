@@ -4,6 +4,8 @@ import { useMidnight } from './hooks/useMidnight';
 import { WalletConnect } from './components/WalletConnect';
 import { CircuitCall } from './components/CircuitCall';
 
+import { Preloader } from './components/Preloader';
+
 // Background grid colors from corda.xyz mockup
 const CORDA_COLORS = [
   '#4a5358', '#4a5358', '#6c5b47', '#7d6a54', '#8e7a63', '#92472d', '#a65335', '#bc603c', '#bc603c', '#bc603c', '#bc603c', '#bc603c',
@@ -50,12 +52,14 @@ export const App: React.FC = () => {
   };
 
   return (
-    <div className="app-container">
-      <div className="noise-overlay" />
+    <>
+      <Preloader />
+      <div id="main-site-content" className="app-container">
+        <div className="noise-overlay" />
 
-      <AnimatePresence mode="wait">
-        {view === 'landing' ? (
-          /* ═══════════════════════════════════════════════════
+        <AnimatePresence mode="wait">
+          {view === 'landing' ? (
+            /* ═══════════════════════════════════════════════════
              1. LANDING PAGE (Corda.xyz Mockup Template)
              ═══════════════════════════════════════════════════ */
           <motion.div
@@ -476,6 +480,7 @@ export const App: React.FC = () => {
         )}
       </AnimatePresence>
     </div>
+    </>
   );
 };
 

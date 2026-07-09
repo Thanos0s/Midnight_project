@@ -544,3 +544,93 @@ body {
 @keyframes spin {
   to { transform: rotate(360deg); }
 }
+
+/* Preloader Container */
+#intro-preloader {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 99999;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  overflow: hidden;
+  background-color: #161616;
+  transition: opacity 0.8s cubic-bezier(0.77, 0, 0.175, 1), visibility 0.8s;
+}
+
+/* Corda-styled vertical multi-tone stripe background */
+.stripe-bg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: -1;
+  background: linear-gradient(
+    90deg,
+    #1b1c1e 0%, #1b1c1e 15%,
+    #282523 15%, #282523 30%,
+    #44332c 30%, #44332c 45%,
+    #773c2c 45%, #773c2c 60%,
+    #3b3d42 60%, #3b3d42 75%,
+    #212327 75%, #212327 90%,
+    #161616 90%, #161616 100%
+  );
+  opacity: 0.85;
+}
+
+/* SVG Logo Presentation */
+.logo-wrapper {
+  width: 90%;
+  max-width: 550px;
+  perspective: 1000px;
+}
+
+.m-logo {
+  width: 100%;
+  height: auto;
+  overflow: visible;
+}
+
+/* Sliding Animations */
+.m-half {
+  transition: transform 1.4s cubic-bezier(0.19, 1, 0.22, 1), filter 0.4s ease;
+}
+
+/* Out-of-screen initial states */
+.left-wing {
+  transform: translateX(-120%);
+}
+
+.right-wing {
+  transform: translateX(120%);
+}
+
+/* Triggered State via JS */
+.animated .left-wing,
+.animated .right-wing {
+  transform: translateX(0);
+}
+
+/* Beaming/Glow effect when elements lock together */
+.beaming .m-half {
+  filter: drop-shadow(0 0 25px rgba(255, 255, 255, 0.75)) brightness(1.2);
+}
+
+/* Hide preloader completely once finished */
+#intro-preloader.fade-out {
+  opacity: 0;
+  visibility: hidden;
+}
+
+/* Optional smooth fade-in for your content */
+#main-site-content {
+  opacity: 0;
+  transition: opacity 1s ease-in-out;
+}
+#main-site-content.visible {
+  opacity: 1;
+}
