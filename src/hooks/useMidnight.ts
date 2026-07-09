@@ -66,10 +66,24 @@ class BrowserZkConfigProvider {
 const browserPrivateStateProvider = {
   get: async (key: string) => {
     const val = localStorage.getItem(`midnight_state_${key}`);
-    return val ? JSON.parse(val) : null;
+    if (!val) return null;
+    return JSON.parse(val, (k, v) => {
+      // Re-hydrate custom serialized bigint objects
+      if (v && typeof v === 'object' && v.type === 'BigInt') {
+        return BigInt(v.value);
+      }
+      return v;
+    });
   },
   set: async (key: string, val: any) => {
-    localStorage.setItem(`midnight_state_${key}`, JSON.stringify(val));
+    const serialized = JSON.stringify(val, (k, v) => {
+      // Intercept and format BigInt values for storage
+      if (typeof v === 'bigint') {
+        return { type: 'BigInt', value: v.toString() };
+      }
+      return v;
+    });
+    localStorage.setItem(`midnight_state_${key}`, serialized);
   },
   delete: async (key: string) => {
     localStorage.removeItem(`midnight_state_${key}`);
