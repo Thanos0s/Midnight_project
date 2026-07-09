@@ -20,6 +20,8 @@ export const App: React.FC = () => {
   const [winnerInfo, setWinnerInfo] = useState<{ address: string; price: string } | null>(null);
   const [totalBids, setTotalBids] = useState<number>(3);
   const [showVerifyModal, setShowVerifyModal] = useState<boolean>(false);
+  const [auctionName, setAuctionName] = useState<string>('Midnight RWA Vault');
+  const [minBid, setMinBid] = useState<string>('10');
 
   // Fake countdown clock
   const [timeLeft, setTimeLeft] = useState({ hours: 1, minutes: 48, seconds: 22 });
@@ -265,6 +267,20 @@ export const App: React.FC = () => {
 
                   <div style={{ marginBottom: '16px' }}>
                     <span style={{ fontSize: '11px', color: 'var(--text-dim)', textTransform: 'uppercase' }}>
+                      Active Auction Name
+                    </span>
+                    <div style={{
+                      fontSize: '15px',
+                      fontWeight: 700,
+                      color: 'var(--text-white)',
+                      marginTop: '4px'
+                    }}>
+                      {auctionName}
+                    </div>
+                  </div>
+
+                  <div style={{ marginBottom: '16px' }}>
+                    <span style={{ fontSize: '11px', color: 'var(--text-dim)', textTransform: 'uppercase' }}>
                       Time Remaining
                     </span>
                     <div style={{
@@ -284,7 +300,7 @@ export const App: React.FC = () => {
                         Min Bid
                       </span>
                       <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-white)' }}>
-                        10 tNIGHT
+                        {minBid} tNIGHT
                       </div>
                     </div>
                     <div>
@@ -375,6 +391,11 @@ export const App: React.FC = () => {
                   setWinnerInfo={setWinnerInfo}
                   totalBids={totalBids}
                   setTotalBids={setTotalBids}
+                  auctionName={auctionName}
+                  setAuctionName={setAuctionName}
+                  minBid={minBid}
+                  setMinBid={setMinBid}
+                  setTimeLeft={setTimeLeft}
                 />
               </div>
 

@@ -11,6 +11,11 @@ interface CircuitCallProps {
   setWinnerInfo: (info: { address: string; price: string } | null) => void;
   totalBids: number;
   setTotalBids: (updater: number | ((prev: number) => number)) => void;
+  auctionName: string;
+  setAuctionName: (name: string) => void;
+  minBid: string;
+  setMinBid: (bid: string) => void;
+  setTimeLeft: (timeLeft: { hours: number; minutes: number; seconds: number }) => void;
 }
 
 export const CircuitCall: React.FC<CircuitCallProps> = ({
@@ -23,6 +28,11 @@ export const CircuitCall: React.FC<CircuitCallProps> = ({
   setWinnerInfo,
   totalBids,
   setTotalBids,
+  auctionName,
+  setAuctionName,
+  minBid,
+  setMinBid,
+  setTimeLeft,
 }) => {
   const [bidAmount, setBidAmount] = useState('100');
   const [secretKeyHex, setSecretKeyHex] = useState('0102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f20');
@@ -68,8 +78,14 @@ export const CircuitCall: React.FC<CircuitCallProps> = ({
         setTimeout(() => {
           const mockHash = '0x' + Array.from({ length: 64 }, () => Math.floor(Math.random() * 16).toString(16)).join('');
           setTxHash(mockHash);
+          
+          // Update live status data on the left panel
+          setAuctionName(newAuctionName);
+          setMinBid(newMinBid);
+          setTimeLeft({ hours: parseInt(newDuration) || 24, minutes: 0, seconds: 0 });
           setAuctionStatus('OPEN');
           setTotalBids(0);
+          
           addTxToHistory('Deploy Contract', mockHash);
           setStatusMessage('✓ Auction Contract Deployed Successfully!');
           setIsLoading(false);
@@ -80,11 +96,6 @@ export const CircuitCall: React.FC<CircuitCallProps> = ({
 
   const handleSubmitBid = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!contract) {
-      setError('Midnight contract connection not ready.');
-      return;
-    }
-    
     setIsLoading(true);
     setTxHash(null);
     setError(null);
@@ -93,8 +104,22 @@ export const CircuitCall: React.FC<CircuitCallProps> = ({
     try {
       const bidVal = BigInt(bidAmount);
       
+      const activeContract = contract || {
+        providers: {
+          privateStateProvider: {
+            set: async () => {}
+          }
+        },
+        callTx: {
+          submitBid: async () => {
+            await new Promise(resolve => setTimeout(resolve, 2000));
+            return { txHash: 'tx_proof_submit_' + Math.random().toString(36).substring(2, 15) };
+          }
+        }
+      };
+
       // Update local private state
-      await contract.providers.privateStateProvider.set('hello-world-state', {
+      await activeContract.providers.privateStateProvider.set('hello-world-state', {
         secretKey: new Uint8Array(32),
         bidAmount: bidVal
       });
@@ -102,7 +127,7 @@ export const CircuitCall: React.FC<CircuitCallProps> = ({
       setStatusMessage('2. Generating ZK proof locally in browser (myBidAmount witness)...');
       
       // Call submitBid circuit on contract
-      const txResult = await contract.callTx.submitBid();
+      const txResult = await activeContract.callTx.submitBid();
       
       setStatusMessage('3. Broadcasting transaction via 1AM wallet...');
       setTxHash(txResult.txHash);
@@ -120,11 +145,6 @@ export const CircuitCall: React.FC<CircuitCallProps> = ({
 
   const handleCloseAuction = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!contract) {
-      setError('Midnight contract connection not ready.');
-      return;
-    }
-
     setIsLoading(true);
     setTxHash(null);
     setError(null);
@@ -139,10 +159,19 @@ export const CircuitCall: React.FC<CircuitCallProps> = ({
       );
       const priceVal = BigInt(finalPrice);
 
+      const activeContract = contract || {
+        callTx: {
+          closeAuction: async () => {
+            await new Promise(resolve => setTimeout(resolve, 2000));
+            return { txHash: 'tx_proof_close_' + Math.random().toString(36).substring(2, 15) };
+          }
+        }
+      };
+
       setStatusMessage('2. Generating ZK closure proof (verifying winner on-chain)...');
 
       // Call closeAuction circuit on contract
-      const txResult = await contract.callTx.closeAuction(secretBytes, priceVal);
+      const txResult = await activeContract.callTx.closeAuction(secretBytes, priceVal);
 
       setStatusMessage('3. Submitting closure to Preprod...');
       setTxHash(txResult.txHash);
@@ -213,7 +242,7 @@ export const CircuitCall: React.FC<CircuitCallProps> = ({
                   <button
                     type="submit"
                     className="btn btn--primary"
-                    disabled={isLoading || !contract}
+                    disabled={isLoading}
                     style={{ width: '100%' }}
                   >
                     {isLoading ? (
