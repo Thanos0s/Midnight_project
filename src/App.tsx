@@ -84,7 +84,7 @@ export const App: React.FC = () => {
             {/* Navbar */}
             <header className="corda-navbar">
               <a href="#" className="corda-logo" onClick={(e) => { e.preventDefault(); setView('landing'); }}>
-                c<span>·</span>rda
+                Mid<span>·</span>night
               </a>
               <button className="corda-btn-pill" onClick={() => triggerConsole('bidder')}>
                 {midnight.isConnected ? 'Enter DApp' : 'Connect Wallet'}
@@ -224,7 +224,7 @@ export const App: React.FC = () => {
             {/* Header */}
             <header className="tx-header">
               <a href="#" className="corda-logo" onClick={(e) => { e.preventDefault(); setView('landing'); }}>
-                c<span>·</span>rda
+                Mid<span>·</span>night
               </a>
               <button className="btn-back-home" onClick={leaveDapp}>
                 ← Back to Home
