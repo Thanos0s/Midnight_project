@@ -167,7 +167,41 @@ export const CircuitCall: React.FC<CircuitCallProps> = ({
       setIsLoading(false);
     }
   };
+  const handleCloseNoWinner = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+    setTxHash(null);
+    setError(null);
+    setStatusMessage('1. Closing auction with no winner...');
 
+    try {
+      const activeContract = contract || {
+        callTx: {
+          closeAuction: async () => {
+            await new Promise(resolve => setTimeout(resolve, 2000));
+            return { txHash: 'tx_proof_close_nowin_' + Math.random().toString(36).substring(2, 15) };
+          }
+        }
+      };
+
+      // Call closeAuction with dummy data to signify no winner (or bypass validation in mock)
+      const txResult = await activeContract.callTx.closeAuction(new Uint8Array(32), BigInt(0));
+
+      setStatusMessage('2. Submitting closure to Preprod...');
+      setTxHash(txResult.txHash);
+      setAuctionStatus('CLOSED');
+      
+      setWinnerInfo({ address: 'none', price: '0' });
+      addTxToHistory('Close (No Winner)', txResult.txHash);
+      setStatusMessage('✓ Auction settled with no winner!');
+    } catch (err: any) {
+      console.error(err);
+      setError(err.message || 'Transaction failed');
+      setStatusMessage('');
+    } finally {
+      setIsLoading(false);
+    }
+  };
   const handleCloseAuction = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
@@ -316,44 +350,72 @@ export const CircuitCall: React.FC<CircuitCallProps> = ({
                   🏆 Auction Sealed Results
                 </h3>
                 
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '20px' }}>
-                  <div>
-                    <span style={{ fontSize: '11px', color: 'var(--text-dim)', textTransform: 'uppercase' }}>
-                      Winner Address
-                    </span>
-                    <div style={{
-                      fontSize: '13px',
-                      color: 'var(--text-white)',
-                      fontFamily: 'var(--font-mono)',
-                      background: 'rgba(0,0,0,0.3)',
-                      padding: '8px 12px',
-                      borderRadius: '6px',
-                      marginTop: '4px'
-                    }}>
-                      {winnerInfo ? winnerInfo.address : 'unsh_b20f8f836047ce33...'}
-                    </div>
+                {winnerInfo?.address === 'none' ? (
+                  <div style={{ padding: '20px', textAlign: 'center', color: 'var(--text-muted)' }}>
+                    No winner was declared for this auction.
                   </div>
-                  <div>
-                    <span style={{ fontSize: '11px', color: 'var(--text-dim)', textTransform: 'uppercase' }}>
-                      Winning Price
-                    </span>
-                    <div style={{
-                      fontSize: '16px',
-                      color: '#10b981',
-                      fontWeight: 700,
-                      marginTop: '4px'
-                    }}>
-                      {winnerInfo ? `${winnerInfo.price} tNIGHT` : '150 tNIGHT'}
+                ) : (
+                  <>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '20px' }}>
+                      <div>
+                        <span style={{ fontSize: '11px', color: 'var(--text-dim)', textTransform: 'uppercase' }}>
+                          Winner Address
+                        </span>
+                        <div style={{
+                          fontSize: '13px',
+                          color: 'var(--text-white)',
+                          fontFamily: 'var(--font-mono)',
+                          background: 'rgba(0,0,0,0.3)',
+                          padding: '8px 12px',
+                          borderRadius: '6px',
+                          marginTop: '4px'
+                        }}>
+                          {winnerInfo ? winnerInfo.address : 'unsh_b20f8f836047ce33...'}
+                        </div>
+                      </div>
+                      <div>
+                        <span style={{ fontSize: '11px', color: 'var(--text-dim)', textTransform: 'uppercase' }}>
+                          Winning Price
+                        </span>
+                        <div style={{
+                          fontSize: '16px',
+                          color: '#10b981',
+                          fontWeight: 700,
+                          marginTop: '4px'
+                        }}>
+                          {winnerInfo ? `${winnerInfo.price} tNIGHT` : '150 tNIGHT'}
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                </div>
 
-                <div className="privacy-badge" style={{ backgroundColor: 'rgba(16, 185, 129, 0.08)', border: '1px solid rgba(16, 185, 129, 0.2)' }}>
-                  <span style={{ fontSize: '14px' }}>✅</span>
-                  <span className="privacy-badge__text" style={{ color: '#10b981' }}>
-                    Winner and price are verified on-chain without revealing other bids
-                  </span>
-                </div>
+                    {/* Check if user won */}
+                    {winnerInfo && myBids.some(b => 'unsh_' + b.secretKey.substring(0, 16) + '...' === winnerInfo.address) && (
+                      <div style={{
+                        padding: '16px',
+                        background: 'linear-gradient(135deg, rgba(139, 92, 246, 0.2), rgba(16, 185, 129, 0.2))',
+                        border: '1px solid rgba(139, 92, 246, 0.4)',
+                        borderRadius: '12px',
+                        marginBottom: '20px',
+                        textAlign: 'center'
+                      }}>
+                        <div style={{ fontSize: '24px', marginBottom: '8px' }}>🎉</div>
+                        <div style={{ fontSize: '16px', fontWeight: 700, color: '#fff', marginBottom: '4px' }}>
+                          Congratulations! You won the auction!
+                        </div>
+                        <div style={{ fontSize: '13px', color: '#10b981' }}>
+                          {winnerInfo.price} tNIGHT has been automatically transferred to your wallet.
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="privacy-badge" style={{ backgroundColor: 'rgba(16, 185, 129, 0.08)', border: '1px solid rgba(16, 185, 129, 0.2)' }}>
+                      <span style={{ fontSize: '14px' }}>✅</span>
+                      <span className="privacy-badge__text" style={{ color: '#10b981' }}>
+                        Winner and price are verified on-chain without revealing other bids
+                      </span>
+                    </div>
+                  </>
+                )}
               </div>
             )}
           </motion.div>
@@ -473,20 +535,33 @@ export const CircuitCall: React.FC<CircuitCallProps> = ({
                   />
                 </div>
 
-                <button
-                  type="submit"
-                  className="btn btn--danger"
-                  disabled={isLoading || auctionStatus === 'CLOSED'}
-                  style={{ width: '100%' }}
-                >
-                  {isLoading ? (
-                    <>
-                      <span className="spinner" /> Finalizing...
-                    </>
-                  ) : (
-                    '🔴 Close Auction'
-                  )}
-                </button>
+                <div style={{ display: 'flex', gap: '12px' }}>
+                  <button
+                    type="submit"
+                    className="btn btn--primary"
+                    disabled={isLoading || auctionStatus === 'CLOSED'}
+                    style={{ flex: 1, background: '#10b981', color: '#fff' }}
+                  >
+                    {isLoading ? (
+                      <span className="spinner" />
+                    ) : (
+                      '🏆 Declare Winner'
+                    )}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleCloseNoWinner}
+                    className="btn btn--danger"
+                    disabled={isLoading || auctionStatus === 'CLOSED'}
+                    style={{ flex: 1 }}
+                  >
+                    {isLoading ? (
+                      <span className="spinner" />
+                    ) : (
+                      '🔴 Declare No Winner (Close Early)'
+                    )}
+                  </button>
+                </div>
               </form>
             </div>
           </motion.div>
