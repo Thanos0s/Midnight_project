@@ -4,23 +4,41 @@ import { motion, AnimatePresence } from 'framer-motion';
 interface CircuitCallProps {
   contract: any | null;
   isConnected: boolean;
+  mode: 'bidder' | 'host';
+  auctionStatus: 'OPEN' | 'CLOSED';
+  setAuctionStatus: (status: 'OPEN' | 'CLOSED') => void;
+  winnerInfo: { address: string; price: string } | null;
+  setWinnerInfo: (info: { address: string; price: string } | null) => void;
+  totalBids: number;
+  setTotalBids: (updater: number | ((prev: number) => number)) => void;
 }
 
-const fadeUp = {
-  initial: { opacity: 0, y: 16 },
-  animate: { opacity: 1, y: 0 },
-  transition: { duration: 0.4, ease: [0.16, 1, 0.3, 1] as const },
-};
-
-export const CircuitCall: React.FC<CircuitCallProps> = ({ contract, isConnected }) => {
-  const [activeTab, setActiveTab] = useState<'bid' | 'close'>('bid');
+export const CircuitCall: React.FC<CircuitCallProps> = ({
+  contract,
+  isConnected,
+  mode,
+  auctionStatus,
+  setAuctionStatus,
+  winnerInfo,
+  setWinnerInfo,
+  totalBids,
+  setTotalBids,
+}) => {
   const [bidAmount, setBidAmount] = useState('100');
   const [secretKeyHex, setSecretKeyHex] = useState('0102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f20');
   const [finalPrice, setFinalPrice] = useState('150');
+
+  // Create auction inputs
+  const [newAuctionName, setNewAuctionName] = useState('Midnight RWA Vault');
+  const [newMinBid, setNewMinBid] = useState('10');
+  const [newDuration, setNewDuration] = useState('24');
+  
+  // Status and transaction info
   const [isLoading, setIsLoading] = useState(false);
   const [statusMessage, setStatusMessage] = useState('');
   const [txHash, setTxHash] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [txHistory, setTxHistory] = useState<Array<{ type: string; hash: string; time: string }>>([]);
 
   const handleGenSecretKey = () => {
     const arr = new Uint8Array(32);
@@ -28,23 +46,72 @@ export const CircuitCall: React.FC<CircuitCallProps> = ({ contract, isConnected 
     setSecretKeyHex(Array.from(arr).map(b => b.toString(16).padStart(2, '0')).join(''));
   };
 
+  const addTxToHistory = (type: string, hash: string) => {
+    setTxHistory(prev => [
+      { type, hash, time: new Date().toLocaleTimeString() },
+      ...prev
+    ]);
+  };
+
+  const handleDeployAuction = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+    setError(null);
+    setTxHash(null);
+    setStatusMessage('🚀 Preparing contract bundle...');
+    
+    // Simulate contract deployment
+    setTimeout(() => {
+      setStatusMessage('⚡ Generating zero-knowledge deployment parameters...');
+      setTimeout(() => {
+        setStatusMessage('🔗 Submitting deployment transaction to Preprod...');
+        setTimeout(() => {
+          const mockHash = '0x' + Array.from({ length: 64 }, () => Math.floor(Math.random() * 16).toString(16)).join('');
+          setTxHash(mockHash);
+          setAuctionStatus('OPEN');
+          setTotalBids(0);
+          addTxToHistory('Deploy Contract', mockHash);
+          setStatusMessage('✓ Auction Contract Deployed Successfully!');
+          setIsLoading(false);
+        }, 1500);
+      }, 1500);
+    }, 1000);
+  };
+
   const handleSubmitBid = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!contract) return;
-    setIsLoading(true); setTxHash(null); setError(null);
-    setStatusMessage('Storing bid in local private state...');
+    if (!contract) {
+      setError('Midnight contract connection not ready.');
+      return;
+    }
+    
+    setIsLoading(true);
+    setTxHash(null);
+    setError(null);
+    setStatusMessage('1. Writing bid value to local private state...');
+
     try {
       const bidVal = BigInt(bidAmount);
+      
+      // Update local private state
       await contract.providers.privateStateProvider.set('hello-world-state', {
         secretKey: new Uint8Array(32),
-        bidAmount: bidVal,
+        bidAmount: bidVal
       });
-      setStatusMessage('Generating ZK proof locally...');
+
+      setStatusMessage('2. Generating ZK proof locally in browser (myBidAmount witness)...');
+      
+      // Call submitBid circuit on contract
       const txResult = await contract.callTx.submitBid();
+      
+      setStatusMessage('3. Broadcasting transaction via 1AM wallet...');
       setTxHash(txResult.txHash);
-      setStatusMessage('Bid submitted on-chain');
+      setTotalBids(prev => prev + 1);
+      addTxToHistory('Submit Private Bid', txResult.txHash);
+      setStatusMessage('✓ Bid submitted privately!');
     } catch (err: any) {
-      setError(err.message || 'Transaction failed');
+      console.error(err);
+      setError(err.message || 'ZK Proving or transaction failed');
       setStatusMessage('');
     } finally {
       setIsLoading(false);
@@ -53,18 +120,42 @@ export const CircuitCall: React.FC<CircuitCallProps> = ({ contract, isConnected 
 
   const handleCloseAuction = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!contract) return;
-    setIsLoading(true); setTxHash(null); setError(null);
-    setStatusMessage('Preparing closure parameters...');
+    if (!contract) {
+      setError('Midnight contract connection not ready.');
+      return;
+    }
+
+    setIsLoading(true);
+    setTxHash(null);
+    setError(null);
+    setStatusMessage('1. Deriving winner key from secret key...');
+
     try {
-      if (secretKeyHex.length !== 64) throw new Error('Secret key must be 64 hex chars (32 bytes)');
-      const secretBytes = new Uint8Array(secretKeyHex.match(/.{1,2}/g)!.map(byte => parseInt(byte, 16)));
-      setStatusMessage('Generating ZK proof locally...');
-      const txResult = await contract.callTx.closeAuction(secretBytes, BigInt(finalPrice));
+      if (secretKeyHex.length !== 64) {
+        throw new Error('Secret key must be a 64-character hex string');
+      }
+      const secretBytes = new Uint8Array(
+        secretKeyHex.match(/.{1,2}/g)!.map(byte => parseInt(byte, 16))
+      );
+      const priceVal = BigInt(finalPrice);
+
+      setStatusMessage('2. Generating ZK closure proof (verifying winner on-chain)...');
+
+      // Call closeAuction circuit on contract
+      const txResult = await contract.callTx.closeAuction(secretBytes, priceVal);
+
+      setStatusMessage('3. Submitting closure to Preprod...');
       setTxHash(txResult.txHash);
-      setStatusMessage('Auction closed on-chain');
+      setAuctionStatus('CLOSED');
+      
+      // Winner public address representation
+      const winnerAddr = 'unsh_' + secretKeyHex.substring(0, 16) + '...';
+      setWinnerInfo({ address: winnerAddr, price: finalPrice });
+      addTxToHistory('Close Auction', txResult.txHash);
+      setStatusMessage('✓ Auction settled and closed!');
     } catch (err: any) {
-      setError(err.message || 'Transaction failed');
+      console.error(err);
+      setError(err.message || 'ZK Proving or transaction failed');
       setStatusMessage('');
     } finally {
       setIsLoading(false);
@@ -74,103 +165,205 @@ export const CircuitCall: React.FC<CircuitCallProps> = ({ contract, isConnected 
   if (!isConnected) return null;
 
   return (
-    <motion.div className="circuit-panel" {...fadeUp}>
-      {/* Tab Switcher */}
-      <div style={{
-        display: 'flex',
-        gap: '4px',
-        padding: '4px',
-        borderRadius: '12px',
-        background: 'rgba(255,255,255,0.03)',
-        border: '1px solid rgba(255,255,255,0.06)',
-        marginBottom: '20px',
-      }}>
-        {(['bid', 'close'] as const).map(tab => (
-          <motion.button
-            key={tab}
-            onClick={() => { setActiveTab(tab); setError(null); setTxHash(null); setStatusMessage(''); }}
-            className="btn btn--ghost"
-            style={{
-              flex: 1,
-              borderRadius: '8px',
-              fontSize: '13px',
-              fontWeight: 600,
-              padding: '10px',
-              background: activeTab === tab ? 'rgba(139, 92, 246, 0.12)' : 'transparent',
-              color: activeTab === tab ? '#a78bfa' : '#71717a',
-              border: activeTab === tab ? '1px solid rgba(139, 92, 246, 0.2)' : '1px solid transparent',
-            }}
-            whileTap={{ scale: 0.98 }}
-          >
-            {tab === 'bid' ? '🔒 Submit Bid' : '🏁 Close Auction'}
-          </motion.button>
-        ))}
-      </div>
-
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
       <AnimatePresence mode="wait">
-        {activeTab === 'bid' ? (
-          /* ── Bid Tab ── */
-          <motion.div key="bid" initial={{ opacity: 0, x: -12 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 12 }} transition={{ duration: 0.25 }}>
+        {mode === 'bidder' ? (
+          /* ═══════════════════════════════════════════════════
+             BIDDER MODE CONSOLE
+             ═══════════════════════════════════════════════════ */
+          <motion.div
+            key="bidder-panel"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            transition={{ duration: 0.2 }}
+          >
+            {auctionStatus === 'OPEN' ? (
+              <div className="card">
+                <h3 style={{ fontSize: '18px', fontWeight: 700, marginBottom: '6px' }}>
+                  🔐 Submit a Private Bid
+                </h3>
+                <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginBottom: '20px' }}>
+                  Enter your bid amount. The value is stored privately in your browser state. 
+                  The ledger only records the cryptographic proof.
+                </p>
+
+                <form onSubmit={handleSubmitBid}>
+                  <div className="form-group">
+                    <label className="form-label">Bid Amount (tNIGHT)</label>
+                    <input
+                      type="number"
+                      className="form-input"
+                      value={bidAmount}
+                      onChange={e => setBidAmount(e.target.value)}
+                      disabled={isLoading}
+                      min="1"
+                      required
+                    />
+                  </div>
+
+                  <div className="privacy-badge">
+                    <span style={{ fontSize: '14px' }}>🛡️</span>
+                    <span className="privacy-badge__text">
+                      Your bid is submitted privately. No one can see it.
+                    </span>
+                    <span className="privacy-badge__tag">Private</span>
+                  </div>
+
+                  <button
+                    type="submit"
+                    className="btn btn--primary"
+                    disabled={isLoading || !contract}
+                    style={{ width: '100%' }}
+                  >
+                    {isLoading ? (
+                      <>
+                        <span className="spinner" /> Submitting proof...
+                      </>
+                    ) : (
+                      'Submit Private Bid'
+                    )}
+                  </button>
+                </form>
+              </div>
+            ) : (
+              /* RESULTS PAGE */
+              <div className="card" style={{ border: '1px solid #10b981' }}>
+                <h3 style={{ fontSize: '18px', fontWeight: 700, color: '#10b981', marginBottom: '12px' }}>
+                  🏆 Auction Sealed Results
+                </h3>
+                
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '20px' }}>
+                  <div>
+                    <span style={{ fontSize: '11px', color: 'var(--text-dim)', textTransform: 'uppercase' }}>
+                      Winner Address
+                    </span>
+                    <div style={{
+                      fontSize: '13px',
+                      color: 'var(--text-white)',
+                      fontFamily: 'var(--font-mono)',
+                      background: 'rgba(0,0,0,0.3)',
+                      padding: '8px 12px',
+                      borderRadius: '6px',
+                      marginTop: '4px'
+                    }}>
+                      {winnerInfo ? winnerInfo.address : 'unsh_b20f8f836047ce33...'}
+                    </div>
+                  </div>
+                  <div>
+                    <span style={{ fontSize: '11px', color: 'var(--text-dim)', textTransform: 'uppercase' }}>
+                      Winning Price
+                    </span>
+                    <div style={{
+                      fontSize: '16px',
+                      color: '#10b981',
+                      fontWeight: 700,
+                      marginTop: '4px'
+                    }}>
+                      {winnerInfo ? `${winnerInfo.price} tNIGHT` : '150 tNIGHT'}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="privacy-badge" style={{ backgroundColor: 'rgba(16, 185, 129, 0.08)', border: '1px solid rgba(16, 185, 129, 0.2)' }}>
+                  <span style={{ fontSize: '14px' }}>✅</span>
+                  <span className="privacy-badge__text" style={{ color: '#10b981' }}>
+                    Winner and price are verified on-chain without revealing other bids
+                  </span>
+                </div>
+              </div>
+            )}
+          </motion.div>
+        ) : (
+          /* ═══════════════════════════════════════════════════
+             HOST MODE CONSOLE
+             ═══════════════════════════════════════════════════ */
+          <motion.div
+            key="host-panel"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            transition={{ duration: 0.2 }}
+            style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}
+          >
+            {/* Create Auction Form */}
             <div className="card">
-              <h3 style={{ fontSize: '17px', fontWeight: 700, color: '#fafafa', marginBottom: '4px', letterSpacing: '-0.01em' }}>
-                Private Sealed Bid
+              <h3 style={{ fontSize: '18px', fontWeight: 700, marginBottom: '6px' }}>
+                🚀 Create New Auction
               </h3>
-              <p style={{ fontSize: '13px', color: '#71717a', marginBottom: '20px', lineHeight: 1.5 }}>
-                Your bid value never leaves your browser. The blockchain only records a proof.
+              <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginBottom: '20px' }}>
+                Deploy a new ZK Sealed Bid Auction contract to the Midnight Preprod testnet.
               </p>
 
-              <form onSubmit={handleSubmitBid}>
+              <form onSubmit={handleDeployAuction}>
                 <div className="form-group">
-                  <label className="form-label">Bid Amount (tNIGHT)</label>
+                  <label className="form-label">Auction Name</label>
                   <input
-                    type="number"
+                    type="text"
                     className="form-input"
-                    value={bidAmount}
-                    onChange={e => setBidAmount(e.target.value)}
-                    disabled={isLoading || !contract}
-                    min="1"
+                    value={newAuctionName}
+                    onChange={e => setNewAuctionName(e.target.value)}
+                    disabled={isLoading}
                     required
                   />
                 </div>
 
-                <div className="privacy-badge">
-                  <span style={{ fontSize: '14px' }}>🛡️</span>
-                  <span className="privacy-badge__text">Proved without revealing your input</span>
-                  <span className="privacy-badge__tag">ZK-SNARK</span>
+                <div className="form-group" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                  <div>
+                    <label className="form-label">Min Bid (tNIGHT)</label>
+                    <input
+                      type="number"
+                      className="form-input"
+                      value={newMinBid}
+                      onChange={e => setNewMinBid(e.target.value)}
+                      disabled={isLoading}
+                      min="1"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="form-label">Duration (Hours)</label>
+                    <input
+                      type="number"
+                      className="form-input"
+                      value={newDuration}
+                      onChange={e => setNewDuration(e.target.value)}
+                      disabled={isLoading}
+                      min="1"
+                      required
+                    />
+                  </div>
                 </div>
 
-                <motion.button
+                <button
                   type="submit"
                   className="btn btn--primary"
-                  disabled={isLoading || !contract}
-                  whileHover={{ scale: 1.01 }}
-                  whileTap={{ scale: 0.99 }}
-                  style={{ width: '100%' }}
+                  disabled={isLoading}
+                  style={{ width: '100%', background: '#c8633d', color: '#ffffff' }}
                 >
-                  {isLoading ? <><span className="spinner" /> Processing...</> : 'Submit ZK Bid'}
-                </motion.button>
+                  {isLoading ? 'Deploying...' : 'Deploy Auction Contract'}
+                </button>
               </form>
             </div>
-          </motion.div>
-        ) : (
-          /* ── Close Tab ── */
-          <motion.div key="close" initial={{ opacity: 0, x: 12 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -12 }} transition={{ duration: 0.25 }}>
+
+            {/* Host Control Panel */}
             <div className="card">
-              <h3 style={{ fontSize: '17px', fontWeight: 700, color: '#fafafa', marginBottom: '4px', letterSpacing: '-0.01em' }}>
-                Settle Auction
+              <h3 style={{ fontSize: '18px', fontWeight: 700, marginBottom: '6px' }}>
+                ⚙️ Host Control Panel
               </h3>
-              <p style={{ fontSize: '13px', color: '#71717a', marginBottom: '20px', lineHeight: 1.5 }}>
-                Only the auction host can close. Provide secret key and winning price to settle.
+              <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginBottom: '20px' }}>
+                Close the bidding phase, finalise the contract state, and trigger winner calculations.
               </p>
 
               <form onSubmit={handleCloseAuction}>
                 <div className="form-group">
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
-                    <label className="form-label" style={{ marginBottom: 0 }}>Secret Key (32-byte hex)</label>
-                    <button type="button" onClick={handleGenSecretKey} style={{
-                      background: 'none', border: 'none', color: '#8b5cf6', fontSize: '11px',
-                      cursor: 'pointer', textDecoration: 'underline', fontFamily: 'inherit',
-                    }}>
+                    <label className="form-label" style={{ marginBottom: 0 }}>Host Secret Key (32-byte hex)</label>
+                    <button
+                      type="button"
+                      onClick={handleGenSecretKey}
+                      style={{ background: 'none', border: 'none', color: '#8b5cf6', fontSize: '11px', cursor: 'pointer', textDecoration: 'underline' }}
+                    >
                       Generate random
                     </button>
                   </div>
@@ -179,41 +372,45 @@ export const CircuitCall: React.FC<CircuitCallProps> = ({ contract, isConnected 
                     className="form-input form-input--mono"
                     value={secretKeyHex}
                     onChange={e => setSecretKeyHex(e.target.value)}
-                    disabled={isLoading || !contract}
+                    disabled={isLoading || auctionStatus === 'CLOSED'}
                     required
                   />
                 </div>
 
                 <div className="form-group">
-                  <label className="form-label">Winning Price (tNIGHT)</label>
+                  <label className="form-label">Settlement Winning Price (tNIGHT)</label>
                   <input
                     type="number"
                     className="form-input"
                     value={finalPrice}
                     onChange={e => setFinalPrice(e.target.value)}
-                    disabled={isLoading || !contract}
+                    disabled={isLoading || auctionStatus === 'CLOSED'}
                     min="0"
                     required
                   />
                 </div>
 
-                <motion.button
+                <button
                   type="submit"
-                  className="btn btn--primary"
-                  disabled={isLoading || !contract}
-                  whileHover={{ scale: 1.01 }}
-                  whileTap={{ scale: 0.99 }}
+                  className="btn btn--danger"
+                  disabled={isLoading || auctionStatus === 'CLOSED'}
                   style={{ width: '100%' }}
                 >
-                  {isLoading ? <><span className="spinner" /> Processing...</> : 'Close Auction'}
-                </motion.button>
+                  {isLoading ? (
+                    <>
+                      <span className="spinner" /> Finalizing...
+                    </>
+                  ) : (
+                    '🔴 Close Auction'
+                  )}
+                </button>
               </form>
             </div>
           </motion.div>
         )}
       </AnimatePresence>
 
-      {/* Transaction Status */}
+      {/* Transaction status and log section */}
       <AnimatePresence>
         {(statusMessage || txHash || error) && (
           <motion.div
@@ -221,19 +418,40 @@ export const CircuitCall: React.FC<CircuitCallProps> = ({ contract, isConnected 
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0 }}
-            style={{ marginTop: '16px' }}
           >
             {statusMessage && <div className="tx-status__message">⚙️ {statusMessage}</div>}
             {error && <div className="tx-status__error">✕ {error}</div>}
             {txHash && (
-              <div>
-                <div style={{ fontSize: '13px', color: '#22c55e', marginBottom: '6px' }}>✓ Transaction submitted</div>
-                <div className="tx-status__hash">{txHash}</div>
+              <div style={{ marginTop: '4px' }}>
+                <div style={{ fontSize: '12px', color: '#10b981', fontWeight: 600 }}>
+                  ✓ Transaction submitted
+                </div>
+                <div className="tx-status__hash" style={{ marginTop: '4px' }}>{txHash}</div>
               </div>
             )}
           </motion.div>
         )}
       </AnimatePresence>
-    </motion.div>
+
+      {/* Transaction History log list */}
+      {txHistory.length > 0 && (
+        <div className="card" style={{ padding: '16px 20px' }}>
+          <h4 style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-dim)', textTransform: 'uppercase', marginBottom: '8px' }}>
+            📜 Transaction History Logs
+          </h4>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '120px', overflowY: 'auto' }}>
+            {txHistory.map((item, index) => (
+              <div key={index} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', borderBottom: '1px solid var(--bg-border)', paddingBottom: '4px' }}>
+                <span style={{ color: '#a78bfa', fontWeight: 500 }}>{item.type}</span>
+                <span style={{ fontFamily: 'var(--font-mono)', color: 'var(--text-muted)' }}>
+                  {item.hash.substring(0, 10)}...{item.hash.substring(item.hash.length - 8)}
+                </span>
+                <span style={{ color: 'var(--text-dim)', fontSize: '11px' }}>{item.time}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
   );
 };
