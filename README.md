@@ -1,49 +1,67 @@
-# Private Bid Contract
+# Midnight Private Bid Auction DApp
+> A privacy-preserving sealed-bid auction decentralized application on the Midnight Network.
 
-This is a small Midnight Compact contract.
+## Live Demo
+[PASTE YOUR LIVE DEMO URL HERE AFTER DEPLOYING FRONTEND]
 
-The idea is simple:
-- people can submit bids
-- bid values stay private
-- the contract only stores how many bids were made
-- when the auction is closed, it shows the winner and the final price
+## Contract Address
+| Network  | Address                          |
+|----------|----------------------------------|
+| Preprod  | b20f8f836047ce33353b13e1e85d8dc95a55f306e876cb7b822bbaad4bb1acf6  |
 
-## Files
+## What This Does
+This decentralized application (DApp) implements a sealed-bid auction. Bidders submit their bids secretly. The application leverages zero-knowledge cryptography so that bid values remain completely private during the bidding phase. When the auction host closes the auction, the winner's public key identity and the final winning price are proven and disclosed on-chain, settling the auction securely and fairly.
 
-- `auction.compact` has the contract code
-- `witnesses.js` gives the private bid value to the contract
-- `test.js` checks that the contract works
-- `managed/` is made by the Compact compiler
+## Privacy Model
+*   **What is PUBLIC:** 
+    *   The total number of bids submitted during the auction.
+    *   The auction status (`OPEN` or `CLOSED`).
+    *   The public key identity of the winner (once closed).
+    *   The final winning price (once closed).
+*   **What is PRIVATE:**
+    *   Individual bid amounts submitted by each bidder.
+    *   The secret keys of the bidders.
+*   **What the user PROVES without revealing:**
+    *   The bidder proves that their bid is valid and successfully registers it in the local state, without revealing the actual numeric value of the bid to the network or other participants.
 
-## Commands
+## Privacy Claim
+An on-chain observer watching the ledger during the auction phase can only see that transactions are occurring and the bid count is incrementing. The observer cannot see how much was bid or who bid what amount. Once closed, the observer can see the winning price and the winner's derived public key, but the individual losing bids and the secret keys used to derive the identities remain completely private and unrevealed.
 
-Compile the contract:
+## Tech Stack
+*   **Blockchain Network:** Midnight Network (Preprod)
+*   **Smart Contract Language:** Compact
+*   **SDK:** Midnight.js SDK
+*   **Wallet Connector:** Lace Wallet (DApp connector API)
+*   **Frontend:** React, Vite, TypeScript
 
-```bash
-compact compile auction.compact managed
-```
+## Prerequisites
+*   **Lace Beta Wallet** extension installed in browser
+*   Lace wallet connected to **Midnight Preprod** network and funded with test tokens (tNIGHT)
+*   **Node.js** v22 and **Yarn** / **npm**
 
-Run the tests:
+## Run Locally
 
-```bash
-node --test test.js
-```
+1. **Clone the repository:**
+   ```bash
+   git clone https://github.com/Thanos0s/Midnight_project.git
+   cd Midnight_project
+   ```
 
-## Notes
+2. **Install dependencies:**
+   ```bash
+   yarn install
+   ```
 
-`ledger` is public data.
+3. **Compile the contract (optional):**
+   ```bash
+   yarn run compile
+   ```
 
-`witness` is private data.
+4. **Start the development server:**
+   ```bash
+   yarn run dev
+   ```
+   Open `http://localhost:3000` in your web browser.
 
-`disclose()` makes a value public.
-
-## Project Structure vs Deployment Folder
-
-- **`project/` (This folder)**: The main smart contract development folder. It is where you write contract code (`auction.compact`), define witnesses (`witnesses.js`), and run unit tests (`test.js`).
-- **`auction-deploy/` (Sibling folder)**: The deployment infrastructure. It contains Docker Compose configurations to run a local Midnight network (node, indexer, proof-server) and the TypeScript code to compile, fund, and deploy the contract.
-
-## Deployed contract address
-
-Network: local docker
-Address: b20f8f836047ce33353b13e1e85d8dc95a55f306e876cb7b822bbaad4bb1acf6
-
+## Demo Video
+[PLACEHOLDER — I will add the link after recording]

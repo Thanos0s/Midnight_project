@@ -1,0 +1,15 @@
+# Node / bundler files
+node_modules/
+dist/
+yarn-error.log
+
+# Midnight state and credentials
+.midnight-state.json
+.midnight-wallet-state/
+.midnight-seed/
+.env
+.env.local
+
+# OS files
+.DS_Store
+Thumbs.db
