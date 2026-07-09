@@ -44,7 +44,7 @@ export const CircuitCall: React.FC<CircuitCallProps> = ({
   const [newDuration, setNewDuration] = useState('24');
   
   // Placed bids list
-  const [myBids, setMyBids] = useState<Array<{ amount: string; secretKey: string; txHash?: string; time: string }>>(() => {
+  const [myBids, setMyBids] = useState<Array<{ amount: string; secretKey: string; txHash?: string; time: string; auctionName?: string }>>(() => {
     const saved = localStorage.getItem('midnight_my_bids');
     return saved ? JSON.parse(saved) : [];
   });
@@ -151,7 +151,8 @@ export const CircuitCall: React.FC<CircuitCallProps> = ({
         amount: bidAmount,
         secretKey: secretHex,
         txHash: txResult.txHash,
-        time: new Date().toLocaleTimeString()
+        time: new Date().toLocaleTimeString(),
+        auctionName: auctionName
       };
       const updatedBids = [newBid, ...myBids];
       setMyBids(updatedBids);
@@ -314,34 +315,66 @@ export const CircuitCall: React.FC<CircuitCallProps> = ({
                   </button>
                 </form>
 
-                {/* Placed Bids List */}
-                {myBids.length > 0 && (
-                  <div style={{ marginTop: '20px', borderTop: '1px solid var(--bg-border)', paddingTop: '20px' }}>
-                    <h4 style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '12px' }}>
-                      📋 Placed Bids ({myBids.length})
-                    </h4>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', maxHeight: '200px', overflowY: 'auto', paddingRight: '4px' }}>
-                      {myBids.map((b, idx) => (
-                        <div key={idx} style={{ padding: '12px', background: 'rgba(0,0,0,0.2)', border: '1px solid var(--bg-border)', borderRadius: '8px' }}>
-                          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', fontWeight: 600 }}>
-                            <span>Bid #{myBids.length - idx}</span>
-                            <span style={{ color: '#10b981' }}>{b.amount} tNIGHT</span>
-                          </div>
-                          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginTop: '6px', fontSize: '11px', fontFamily: 'var(--font-mono)' }}>
-                            <div style={{ color: 'var(--text-muted)', overflowX: 'auto', whiteSpace: 'nowrap', maxWidth: '100%' }}>
-                              <span style={{ color: 'var(--text-dim)' }}>Secret Key:</span> {b.secretKey}
+                {/* Current Auction Bids List */}
+                {(() => {
+                  const currentBids = myBids.filter(b => b.auctionName === auctionName);
+                  if (currentBids.length === 0) return null;
+                  return (
+                    <div style={{ marginTop: '20px', borderTop: '1px solid var(--bg-border)', paddingTop: '20px' }}>
+                      <h4 style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '12px' }}>
+                        📋 Fresh Bids ({currentBids.length})
+                      </h4>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', maxHeight: '200px', overflowY: 'auto', paddingRight: '4px' }}>
+                        {currentBids.map((b, idx) => (
+                          <div key={idx} style={{ padding: '12px', background: 'rgba(0,0,0,0.2)', border: '1px solid var(--bg-border)', borderRadius: '8px' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', fontWeight: 600 }}>
+                              <span>Bid #{currentBids.length - idx}</span>
+                              <span style={{ color: '#10b981' }}>{b.amount} tNIGHT</span>
                             </div>
-                            {b.txHash && (
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginTop: '6px', fontSize: '11px', fontFamily: 'var(--font-mono)' }}>
                               <div style={{ color: 'var(--text-muted)', overflowX: 'auto', whiteSpace: 'nowrap', maxWidth: '100%' }}>
-                                <span style={{ color: 'var(--text-dim)' }}>Tx Hash:</span> {b.txHash}
+                                <span style={{ color: 'var(--text-dim)' }}>Secret Key:</span> {b.secretKey}
                               </div>
-                            )}
+                              {b.txHash && (
+                                <div style={{ color: 'var(--text-muted)', overflowX: 'auto', whiteSpace: 'nowrap', maxWidth: '100%' }}>
+                                  <span style={{ color: 'var(--text-dim)' }}>Tx Hash:</span> {b.txHash}
+                                </div>
+                              )}
+                            </div>
                           </div>
-                        </div>
-                      ))}
+                        ))}
+                      </div>
                     </div>
-                  </div>
-                )}
+                  );
+                })()}
+
+                {/* Previous Bids (Past Auctions) */}
+                {(() => {
+                  const pastBids = myBids.filter(b => b.auctionName !== auctionName);
+                  if (pastBids.length === 0) return null;
+                  return (
+                    <div style={{ marginTop: '20px', borderTop: '1px solid var(--bg-border)', paddingTop: '20px' }}>
+                      <h4 style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '12px' }}>
+                        🕒 Previous Bids ({pastBids.length})
+                      </h4>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', maxHeight: '150px', overflowY: 'auto', paddingRight: '4px', opacity: 0.7 }}>
+                        {pastBids.map((b, idx) => (
+                          <div key={idx} style={{ padding: '12px', background: 'rgba(0,0,0,0.1)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '8px' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', fontWeight: 600, color: 'var(--text-dim)' }}>
+                              <span>{b.auctionName || 'Unknown Auction'}</span>
+                              <span>{b.amount} tNIGHT</span>
+                            </div>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginTop: '6px', fontSize: '11px', fontFamily: 'var(--font-mono)' }}>
+                              <div style={{ color: 'var(--text-muted)', overflowX: 'auto', whiteSpace: 'nowrap', maxWidth: '100%' }}>
+                                <span style={{ color: 'var(--text-dim)' }}>Key:</span> {b.secretKey}
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })()}
               </div>
             ) : (
               /* RESULTS PAGE */
