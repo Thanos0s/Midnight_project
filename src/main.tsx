@@ -8,6 +8,11 @@ import { Buffer } from 'buffer';
 (window as any).Buffer = Buffer;
 globalThis.Buffer = Buffer;
 
+// Global polyfill for BigInt JSON serialization to support JSON.stringify inside Midnight SDK
+(BigInt.prototype as any).toJSON = function () {
+  return this.toString();
+};
+
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <App />

@@ -43,6 +43,12 @@ export const CircuitCall: React.FC<CircuitCallProps> = ({
   const [newMinBid, setNewMinBid] = useState('10');
   const [newDuration, setNewDuration] = useState('24');
   
+  // Placed bids list
+  const [myBids, setMyBids] = useState<Array<{ amount: string; secretKey: string; txHash?: string; time: string }>>(() => {
+    const saved = localStorage.getItem('midnight_my_bids');
+    return saved ? JSON.parse(saved) : [];
+  });
+  
   // Status and transaction info
   const [isLoading, setIsLoading] = useState(false);
   const [statusMessage, setStatusMessage] = useState('');
@@ -99,11 +105,18 @@ export const CircuitCall: React.FC<CircuitCallProps> = ({
     setIsLoading(true);
     setTxHash(null);
     setError(null);
-    setStatusMessage('1. Writing bid value to local private state...');
+    setStatusMessage('1. Generating unique cryptographic secret key for this bid...');
 
     try {
       const bidVal = BigInt(bidAmount);
       
+      // Generate a new unique secret key for this specific bid
+      const rawKey = new Uint8Array(32);
+      crypto.getRandomValues(rawKey);
+      const secretHex = Array.from(rawKey).map(b => b.toString(16).padStart(2, '0')).join('');
+
+      setStatusMessage('2. Writing bid value and secret key to local private state...');
+
       const activeContract = contract || {
         providers: {
           privateStateProvider: {
@@ -118,20 +131,32 @@ export const CircuitCall: React.FC<CircuitCallProps> = ({
         }
       };
 
-      // Update local private state
+      // Update local private state with the generated keys
       await activeContract.providers.privateStateProvider.set('hello-world-state', {
-        secretKey: new Uint8Array(32),
+        secretKey: rawKey,
         bidAmount: bidVal
       });
 
-      setStatusMessage('2. Generating ZK proof locally in browser (myBidAmount witness)...');
+      setStatusMessage('3. Generating ZK proof locally in browser (myBidAmount witness)...');
       
       // Call submitBid circuit on contract
       const txResult = await activeContract.callTx.submitBid();
       
-      setStatusMessage('3. Broadcasting transaction via 1AM wallet...');
+      setStatusMessage('4. Broadcasting transaction via 1AM wallet...');
       setTxHash(txResult.txHash);
       setTotalBids(prev => prev + 1);
+      
+      // Save this bid to the local list
+      const newBid = {
+        amount: bidAmount,
+        secretKey: secretHex,
+        txHash: txResult.txHash,
+        time: new Date().toLocaleTimeString()
+      };
+      const updatedBids = [newBid, ...myBids];
+      setMyBids(updatedBids);
+      localStorage.setItem('midnight_my_bids', JSON.stringify(updatedBids));
+      
       addTxToHistory('Submit Private Bid', txResult.txHash);
       setStatusMessage('✓ Bid submitted privately!');
     } catch (err: any) {
@@ -254,6 +279,35 @@ export const CircuitCall: React.FC<CircuitCallProps> = ({
                     )}
                   </button>
                 </form>
+
+                {/* Placed Bids List */}
+                {myBids.length > 0 && (
+                  <div style={{ marginTop: '20px', borderTop: '1px solid var(--bg-border)', paddingTop: '20px' }}>
+                    <h4 style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '12px' }}>
+                      📋 Placed Bids ({myBids.length})
+                    </h4>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', maxHeight: '200px', overflowY: 'auto', paddingRight: '4px' }}>
+                      {myBids.map((b, idx) => (
+                        <div key={idx} style={{ padding: '12px', background: 'rgba(0,0,0,0.2)', border: '1px solid var(--bg-border)', borderRadius: '8px' }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', fontWeight: 600 }}>
+                            <span>Bid #{myBids.length - idx}</span>
+                            <span style={{ color: '#10b981' }}>{b.amount} tNIGHT</span>
+                          </div>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginTop: '6px', fontSize: '11px', fontFamily: 'var(--font-mono)' }}>
+                            <div style={{ color: 'var(--text-muted)', overflowX: 'auto', whiteSpace: 'nowrap', maxWidth: '100%' }}>
+                              <span style={{ color: 'var(--text-dim)' }}>Secret Key:</span> {b.secretKey}
+                            </div>
+                            {b.txHash && (
+                              <div style={{ color: 'var(--text-muted)', overflowX: 'auto', whiteSpace: 'nowrap', maxWidth: '100%' }}>
+                                <span style={{ color: 'var(--text-dim)' }}>Tx Hash:</span> {b.txHash}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             ) : (
               /* RESULTS PAGE */
