@@ -1,8 +1,9 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App';
+import './index.css';
 
-// Inject Buffer globally for browser compatibility with Midnight SDK cryptographic functions
+// Polyfill Buffer for Midnight SDK browser compatibility
 import { Buffer } from 'buffer';
 (window as any).Buffer = Buffer;
 globalThis.Buffer = Buffer;

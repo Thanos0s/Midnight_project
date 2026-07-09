@@ -1,143 +1,332 @@
 import React from 'react';
+import { motion } from 'framer-motion';
 import { useMidnight } from './hooks/useMidnight';
 import { WalletConnect } from './components/WalletConnect';
 import { CircuitCall } from './components/CircuitCall';
 
+// ── Animation Variants ──
+const fadeUp = (delay = 0) => ({
+  initial: { opacity: 0, y: 30 },
+  animate: { opacity: 1, y: 0 },
+  transition: { duration: 0.6, delay, ease: [0.16, 1, 0.3, 1] as const },
+});
+
+const fadeIn = (delay = 0) => ({
+  initial: { opacity: 0 },
+  animate: { opacity: 1 },
+  transition: { duration: 0.8, delay },
+});
+
+const staggerContainer = {
+  animate: { transition: { staggerChildren: 0.1 } },
+};
+
+const staggerItem = {
+  initial: { opacity: 0, y: 20 },
+  animate: { opacity: 1, y: 0, transition: { duration: 0.5, ease: [0.16, 1, 0.3, 1] as const } },
+};
+
+const FEATURES = [
+  {
+    icon: '🔐',
+    title: 'Zero-Knowledge Proofs',
+    desc: 'Bid amounts are proven valid without ever revealing the number. Your financial intent stays private.',
+  },
+  {
+    icon: '🌙',
+    title: 'Midnight Network',
+    desc: 'Built on Midnight — a privacy-focused blockchain with programmable data protection at the protocol level.',
+  },
+  {
+    icon: '⚡',
+    title: 'Browser-Side Proving',
+    desc: 'ZK proofs are generated locally in your browser. No intermediary ever sees your private inputs.',
+  },
+  {
+    icon: '🔗',
+    title: '1AM Wallet',
+    desc: 'Connect seamlessly with the 1AM wallet extension. Supports shielded and unshielded addresses on Preprod.',
+  },
+  {
+    icon: '📜',
+    title: 'Compact Smart Contract',
+    desc: 'Auction logic written in Compact — Midnight\'s privacy-preserving smart contract language with built-in ZK circuits.',
+  },
+  {
+    icon: '🛡️',
+    title: 'Observable Privacy',
+    desc: 'Others see that a bid was placed. They never see the amount. Privacy you can observe and verify.',
+  },
+];
+
 export const App: React.FC = () => {
-  const {
-    isConnected,
-    isConnecting,
-    unshieldedAddress,
-    shieldedAddress,
-    contract,
-    error,
-    connectWallet,
-    disconnectWallet,
-  } = useMidnight();
+  const midnight = useMidnight();
 
   return (
-    <div style={{
-      minHeight: '100vh',
-      background: 'radial-gradient(ellipse at top, #1e293b 0%, #0f172a 50%, #020617 100%)',
-      padding: '40px 20px',
-      boxSizing: 'border-box'
-    }}>
-      {/* Header */}
-      <header style={{
-        textAlign: 'center',
-        marginBottom: '40px'
-      }}>
-        <h1 style={{
-          margin: 0,
-          fontSize: '36px',
-          fontWeight: 700,
-          letterSpacing: '-0.02em',
-          background: 'linear-gradient(135deg, #38bdf8 0%, #0369a1 100%)',
-          WebkitBackgroundClip: 'text',
-          WebkitTextFillColor: 'transparent',
-          textShadow: '0 4px 12px rgba(3, 105, 161, 0.2)'
-        }}>
-          Midnight Private Bid Auction
-        </h1>
-        <p style={{
-          color: '#9ca3af',
-          fontSize: '16px',
-          marginTop: '8px',
-          fontWeight: 400
-        }}>
-          ZK-SNARK Powered Sealed-Bid DApp running on Preprod
-        </p>
-      </header>
+    <>
+      {/* ── Animated Background ── */}
+      <div className="gradient-bg">
+        <div className="gradient-orb gradient-orb--purple" />
+        <div className="gradient-orb gradient-orb--blue" />
+        <div className="gradient-orb gradient-orb--teal" />
+      </div>
+      <div className="grid-pattern" />
 
-      {/* Main Grid Layout */}
-      <main style={{
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '24px',
-        alignItems: 'center'
-      }}>
-        {/* Info Card */}
-        <div style={{
-          background: 'linear-gradient(135deg, rgba(30, 41, 59, 0.4) 0%, rgba(15, 23, 42, 0.4) 100%)',
-          border: '1px solid rgba(56, 189, 248, 0.15)',
-          borderRadius: '16px',
-          padding: '20px 24px',
-          maxWidth: '600px',
-          boxSizing: 'border-box'
-        }}>
-          <h4 style={{ margin: '0 0 8px 0', color: '#38bdf8', fontSize: '15px', fontWeight: 600 }}>
-            💡 Privacy Model Highlight
-          </h4>
-          <p style={{ margin: 0, color: '#9ca3af', fontSize: '13.5px', lineHeight: 1.5 }}>
-            In standard blockchain auctions, bidding amounts are public, allowing competitors to outbid you by a single cent. 
-            On the <strong style={{ color: '#e5e7eb' }}>Midnight Network</strong>, you submit a zero-knowledge proof. 
-            Others only see that you placed a bid, but the amount remains 100% encrypted in your local browser state until you disclose it.
-          </p>
+      {/* ── Navigation ── */}
+      <motion.nav className="nav" {...fadeIn(0.1)}>
+        <div className="nav__logo">
+          <div className="nav__logo-icon">M</div>
+          <span className="nav__logo-text">Midnight Auction</span>
+          <span className="nav__logo-badge">Preprod</span>
         </div>
+        <div className="nav__actions">
+          {midnight.isConnected ? (
+            <motion.button
+              className="btn btn--secondary btn--sm"
+              onClick={midnight.disconnectWallet}
+              whileTap={{ scale: 0.97 }}
+            >
+              {midnight.walletName || '1AM'} · Disconnect
+            </motion.button>
+          ) : (
+            <motion.button
+              className="btn btn--primary btn--sm"
+              onClick={() => midnight.connectWallet()}
+              disabled={midnight.isConnecting}
+              whileTap={{ scale: 0.97 }}
+            >
+              {midnight.isConnecting ? 'Connecting...' : 'Connect Wallet'}
+            </motion.button>
+          )}
+        </div>
+      </motion.nav>
 
-        {/* Wallet Connect Panel */}
-        <WalletConnect
-          isConnected={isConnected}
-          isConnecting={isConnecting}
-          unshieldedAddress={unshieldedAddress}
-          shieldedAddress={shieldedAddress}
-          error={error}
-          connectWallet={connectWallet}
-          disconnectWallet={disconnectWallet}
-        />
+      {/* ── Hero ── */}
+      <section className="hero">
+        <motion.div className="hero__badge" {...fadeUp(0.2)}>
+          <span className="hero__badge-dot" />
+          Live on Preprod
+        </motion.div>
 
-        {/* Contract Initializing State */}
-        {isConnected && !contract && !error && (
-          <div style={{
-            background: 'rgba(30, 41, 59, 0.5)',
-            border: '1px solid rgba(255, 255, 255, 0.05)',
-            borderRadius: '12px',
-            padding: '16px 24px',
-            color: '#38bdf8',
-            fontSize: '14px',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '12px'
-          }}>
-            <span style={{
-              display: 'inline-block',
-              width: '16px',
-              height: '16px',
-              border: '2px solid #38bdf8',
-              borderTopColor: 'transparent',
-              borderRadius: '50%',
-              animation: 'spin 1s linear infinite'
-            }}></span>
-            Locating deployed contract on Preprod indexer...
+        <motion.h1 className="hero__title" {...fadeUp(0.3)}>
+          <span className="hero__title-gradient">Private Auctions</span>
+          <br />
+          <span className="hero__title-accent">Powered by ZK</span>
+        </motion.h1>
+
+        <motion.p className="hero__subtitle" {...fadeUp(0.4)}>
+          Submit sealed bids with zero-knowledge proofs. Your bid amount stays 
+          private — only the proof reaches the chain. Built on the Midnight Network.
+        </motion.p>
+
+        <motion.div className="hero__actions" {...fadeUp(0.5)}>
+          {!midnight.isConnected ? (
+            <motion.button
+              className="btn btn--primary btn--lg"
+              onClick={() => midnight.connectWallet()}
+              disabled={midnight.isConnecting}
+              whileHover={{ scale: 1.03 }}
+              whileTap={{ scale: 0.97 }}
+            >
+              {midnight.isConnecting ? (
+                <><span className="spinner" /> Connecting...</>
+              ) : (
+                'Connect 1AM Wallet →'
+              )}
+            </motion.button>
+          ) : (
+            <motion.button
+              className="btn btn--primary btn--lg"
+              onClick={() => {
+                document.getElementById('interact')?.scrollIntoView({ behavior: 'smooth' });
+              }}
+              whileHover={{ scale: 1.03 }}
+              whileTap={{ scale: 0.97 }}
+            >
+              Start Bidding →
+            </motion.button>
+          )}
+          <motion.a
+            className="btn btn--secondary btn--lg"
+            href="https://github.com/Thanos0s/Midnight_project"
+            target="_blank"
+            rel="noopener noreferrer"
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+          >
+            View Source
+          </motion.a>
+        </motion.div>
+
+        {/* Stats */}
+        <motion.div className="stats" {...fadeUp(0.65)}>
+          <div className="stat">
+            <div className="stat__value">ZK-SNARK</div>
+            <div className="stat__label">Proof System</div>
           </div>
-        )}
+          <div className="stat">
+            <div className="stat__value">Preprod</div>
+            <div className="stat__label">Network</div>
+          </div>
+          <div className="stat">
+            <div className="stat__value">100%</div>
+            <div className="stat__label">Bid Privacy</div>
+          </div>
+        </motion.div>
+      </section>
 
-        {/* Circuit Interactor Panel */}
-        {isConnected && contract && (
-          <CircuitCall
-            contract={contract}
-            isConnected={isConnected}
+      {/* ── Features Section ── */}
+      <section className="section">
+        <motion.div
+          className="section__header"
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: '-100px' }}
+          transition={{ duration: 0.5 }}
+        >
+          <div className="section__label">Why Private Bidding</div>
+          <h2 className="section__title">Standard auctions expose your strategy.<br />This one doesn't.</h2>
+        </motion.div>
+
+        <motion.div
+          className="features-grid"
+          variants={staggerContainer}
+          initial="initial"
+          whileInView="animate"
+          viewport={{ once: true, margin: '-80px' }}
+        >
+          {FEATURES.map((f, i) => (
+            <motion.div key={i} className="card feature-card" variants={staggerItem}>
+              <div className="feature-card__icon">{f.icon}</div>
+              <div className="feature-card__title">{f.title}</div>
+              <div className="feature-card__desc">{f.desc}</div>
+            </motion.div>
+          ))}
+        </motion.div>
+      </section>
+
+      {/* ── Wallet + Interact Section ── */}
+      <section className="section" id="interact">
+        <motion.div
+          className="section__header"
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: '-100px' }}
+          transition={{ duration: 0.5 }}
+        >
+          <div className="section__label">DApp Interface</div>
+          <h2 className="section__title">
+            {midnight.isConnected ? 'Connected — Ready to Bid' : 'Connect your wallet to begin'}
+          </h2>
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.5, delay: 0.15 }}
+        >
+          <WalletConnect
+            isConnected={midnight.isConnected}
+            isConnecting={midnight.isConnecting}
+            unshieldedAddress={midnight.unshieldedAddress}
+            shieldedAddress={midnight.shieldedAddress}
+            walletName={midnight.walletName}
+            error={midnight.error}
+            connectWallet={midnight.connectWallet}
+            disconnectWallet={midnight.disconnectWallet}
           />
+        </motion.div>
+
+        {/* Contract Loading */}
+        {midnight.isConnected && !midnight.contract && !midnight.error && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '10px',
+              padding: '16px',
+              marginTop: '16px',
+              borderRadius: '12px',
+              background: 'rgba(255,255,255,0.03)',
+              border: '1px solid rgba(255,255,255,0.06)',
+              fontSize: '13px',
+              color: '#a78bfa',
+              maxWidth: '560px',
+              margin: '16px auto 0',
+            }}
+          >
+            <span className="spinner" />
+            Locating contract on Preprod...
+          </motion.div>
         )}
-      </main>
 
-      {/* Footer */}
-      <footer style={{
-        textAlign: 'center',
-        marginTop: '60px',
-        color: '#4b5563',
-        fontSize: '13px'
-      }}>
-        Midnight Builder Challenge — Level 2 Submission
+        {midnight.isConnected && midnight.contract && (
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+            style={{ marginTop: '24px' }}
+          >
+            <CircuitCall contract={midnight.contract} isConnected={midnight.isConnected} />
+          </motion.div>
+        )}
+      </section>
+
+      {/* ── Contract Info Section ── */}
+      <section className="section">
+        <motion.div
+          className="card"
+          style={{ maxWidth: '560px', margin: '0 auto' }}
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.5 }}
+        >
+          <div style={{ fontSize: '12px', fontWeight: 600, color: '#8b5cf6', textTransform: 'uppercase' as const, letterSpacing: '0.08em', marginBottom: '12px' }}>
+            Contract Details
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            <div>
+              <div style={{ fontSize: '11px', color: '#52525b', textTransform: 'uppercase' as const, letterSpacing: '0.06em', marginBottom: '4px' }}>Network</div>
+              <div style={{ fontSize: '14px', color: '#fafafa', fontWeight: 500 }}>Midnight Preprod</div>
+            </div>
+            <div>
+              <div style={{ fontSize: '11px', color: '#52525b', textTransform: 'uppercase' as const, letterSpacing: '0.06em', marginBottom: '4px' }}>Contract Address</div>
+              <div style={{
+                fontFamily: "'JetBrains Mono', monospace",
+                fontSize: '11px',
+                color: '#a1a1aa',
+                padding: '8px 12px',
+                background: 'rgba(0,0,0,0.3)',
+                borderRadius: '6px',
+                wordBreak: 'break-all' as const,
+              }}>
+                b20f8f836047ce33353b13e1e85d8dc95a55f306e876cb7b822bbaad4bb1acf6
+              </div>
+            </div>
+            <div>
+              <div style={{ fontSize: '11px', color: '#52525b', textTransform: 'uppercase' as const, letterSpacing: '0.06em', marginBottom: '4px' }}>Language</div>
+              <div style={{ fontSize: '14px', color: '#fafafa', fontWeight: 500 }}>Compact</div>
+            </div>
+          </div>
+        </motion.div>
+      </section>
+
+      {/* ── Footer ── */}
+      <footer className="footer">
+        <p className="footer__text">
+          Midnight Builder Challenge — Level 2 Submission · Built by{' '}
+          <a className="footer__link" href="https://github.com/Thanos0s" target="_blank" rel="noopener noreferrer">
+            Thanos0s
+          </a>
+        </p>
       </footer>
-
-      {/* Inject CSS animation for spinner */}
-      <style>{`
-        @keyframes spin {
-          to { transform: rotate(360deg); }
-        }
-      `}</style>
-    </div>
+    </>
   );
 };
+
 export default App;

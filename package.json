@@ -11,10 +11,9 @@
     "test": "node --test test.js"
   },
   "dependencies": {
-    "react": "^18.3.1",
-    "react-dom": "^18.3.1",
     "@midnight-ntwrk/compact-js": "2.5.0",
     "@midnight-ntwrk/compact-runtime": "0.16.0",
+    "@midnight-ntwrk/dapp-connector-api": "4.0.1",
     "@midnight-ntwrk/ledger-v8": "8.0.3",
     "@midnight-ntwrk/midnight-js-contracts": "4.0.4",
     "@midnight-ntwrk/midnight-js-http-client-proof-provider": "4.0.4",
@@ -23,13 +22,15 @@
     "@midnight-ntwrk/midnight-js-network-id": "4.0.4",
     "@midnight-ntwrk/midnight-js-types": "4.0.4",
     "@midnight-ntwrk/midnight-js-utils": "4.0.4",
-    "@midnight-ntwrk/dapp-connector-api": "4.0.1",
     "@midnight-ntwrk/wallet-sdk-address-format": "3.1.0",
     "@midnight-ntwrk/wallet-sdk-dust-wallet": "3.0.0",
     "@midnight-ntwrk/wallet-sdk-facade": "3.0.0",
     "@midnight-ntwrk/wallet-sdk-hd": "3.0.1",
     "@midnight-ntwrk/wallet-sdk-shielded": "2.1.0",
     "@midnight-ntwrk/wallet-sdk-unshielded-wallet": "2.1.0",
+    "framer-motion": "^12.42.2",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
     "rxjs": "^7.8.2",
     "ws": "^8.20.0"
   },

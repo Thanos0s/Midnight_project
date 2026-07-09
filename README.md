@@ -1,67 +1,57 @@
 # Midnight Private Bid Auction DApp
-> A privacy-preserving sealed-bid auction decentralized application on the Midnight Network.
+
+> Zero-knowledge sealed-bid auctions on the Midnight Network. Your bid, your secret.
 
 ## Live Demo
 [PASTE YOUR LIVE DEMO URL HERE AFTER DEPLOYING FRONTEND]
 
 ## Contract Address
-| Network  | Address                          |
-|----------|----------------------------------|
-| Preprod  | b20f8f836047ce33353b13e1e85d8dc95a55f306e876cb7b822bbaad4bb1acf6  |
+
+| Network  | Address |
+|----------|---------|
+| Preprod  | `b20f8f836047ce33353b13e1e85d8dc95a55f306e876cb7b822bbaad4bb1acf6` |
 
 ## What This Does
-This decentralized application (DApp) implements a sealed-bid auction. Bidders submit their bids secretly. The application leverages zero-knowledge cryptography so that bid values remain completely private during the bidding phase. When the auction host closes the auction, the winner's public key identity and the final winning price are proven and disclosed on-chain, settling the auction securely and fairly.
+
+A sealed-bid auction where bidders submit bids secretly using zero-knowledge proofs. Bid values remain completely private during the bidding phase. When the auction host closes the auction, the winner's public key identity and the final winning price are proven and disclosed on-chain.
 
 ## Privacy Model
-*   **What is PUBLIC:** 
-    *   The total number of bids submitted during the auction.
-    *   The auction status (`OPEN` or `CLOSED`).
-    *   The public key identity of the winner (once closed).
-    *   The final winning price (once closed).
-*   **What is PRIVATE:**
-    *   Individual bid amounts submitted by each bidder.
-    *   The secret keys of the bidders.
-*   **What the user PROVES without revealing:**
-    *   The bidder proves that their bid is valid and successfully registers it in the local state, without revealing the actual numeric value of the bid to the network or other participants.
+
+| Category | What's Visible |
+|----------|---------------|
+| **PUBLIC** | Number of bids, auction status, winner identity (after close), winning price (after close) |
+| **PRIVATE** | Individual bid amounts, bidder secret keys |
+| **PROVEN** | Bid validity — without revealing the numeric value |
 
 ## Privacy Claim
-An on-chain observer watching the ledger during the auction phase can only see that transactions are occurring and the bid count is incrementing. The observer cannot see how much was bid or who bid what amount. Once closed, the observer can see the winning price and the winner's derived public key, but the individual losing bids and the secret keys used to derive the identities remain completely private and unrevealed.
+
+An on-chain observer during the auction phase can only see transactions occurring and the bid count incrementing. They cannot see how much was bid or who bid what amount. Once closed, only the winning price and winner's derived public key are revealed — individual losing bids and secret keys remain completely private.
 
 ## Tech Stack
-*   **Blockchain Network:** Midnight Network (Preprod)
-*   **Smart Contract Language:** Compact
-*   **SDK:** Midnight.js SDK
-*   **Wallet Connector:** Lace Wallet (DApp connector API)
-*   **Frontend:** React, Vite, TypeScript
+
+- **Network:** Midnight Preprod
+- **Contract:** Compact
+- **SDK:** Midnight.js
+- **Wallet:** 1AM Wallet (DApp Connector API v4)
+- **Frontend:** React + Vite + TypeScript
+- **Animations:** Framer Motion
 
 ## Prerequisites
-*   **Lace Beta Wallet** extension installed in browser
-*   Lace wallet connected to **Midnight Preprod** network and funded with test tokens (tNIGHT)
-*   **Node.js** v22 and **Yarn** / **npm**
+
+- [1AM Wallet](https://1am.io) browser extension on Midnight Preprod
+- Node.js v22+ and Yarn
 
 ## Run Locally
 
-1. **Clone the repository:**
-   ```bash
-   git clone https://github.com/Thanos0s/Midnight_project.git
-   cd Midnight_project
-   ```
+```bash
+git clone https://github.com/Thanos0s/Midnight_project.git
+cd Midnight_project
+yarn install
+yarn dev
+```
 
-2. **Install dependencies:**
-   ```bash
-   yarn install
-   ```
-
-3. **Compile the contract (optional):**
-   ```bash
-   yarn run compile
-   ```
-
-4. **Start the development server:**
-   ```bash
-   yarn run dev
-   ```
-   Open `http://localhost:3000` in your web browser.
+Open `http://localhost:3000` in your browser.
 
 ## Demo Video
-[PLACEHOLDER — I will add the link after recording]
+
+[PLACEHOLDER — add link after recording]

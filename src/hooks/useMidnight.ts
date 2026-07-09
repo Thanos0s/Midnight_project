@@ -1,21 +1,26 @@
 import { useState, useCallback, useEffect } from 'react';
-import { CompiledContract } from '@midnight-ntwrk/compact-js';
-import { findDeployedContract } from '@midnight-ntwrk/midnight-js-contracts';
-import { indexerPublicDataProvider } from '@midnight-ntwrk/midnight-js-indexer-public-data-provider';
-import { httpClientProofProvider } from '@midnight-ntwrk/midnight-js-http-client-proof-provider';
-import type { WalletConnectedAPI } from '@midnight-ntwrk/dapp-connector-api';
-import * as HelloWorld from '../../managed/contract/index.js';
 
-// Preprod Network Configurations
+// ── Preprod Network Endpoints ──
 const PREPROD_CONFIG = {
   indexer: 'https://indexer.preprod.midnight.network/api/v4/graphql',
   indexerWS: 'wss://indexer.preprod.midnight.network/api/v4/graphql/ws',
   node: 'https://rpc.preprod.midnight.network',
-  proofServer: 'http://localhost:6300', // Falls back to local proof-server running on user machine
+  proofServer: 'http://localhost:6300',
   contractAddress: 'b20f8f836047ce33353b13e1e85d8dc95a55f306e876cb7b822bbaad4bb1acf6',
 };
 
-// 1. Browser-native ZkConfigProvider that fetches static assets served by Vite/host
+// ── Types ──
+interface WalletState {
+  isConnected: boolean;
+  isConnecting: boolean;
+  unshieldedAddress: string | null;
+  shieldedAddress: string | null;
+  walletName: string | null;
+  error: string | null;
+  contract: any | null;
+}
+
+// ── Browser-native ZkConfigProvider ──
 class BrowserZkConfigProvider {
   async getZKIR(circuitId: string): Promise<any> {
     const res = await fetch(`/managed/zkir/${circuitId}.zkir`);
@@ -35,13 +40,11 @@ class BrowserZkConfigProvider {
     return new Uint8Array(await res.arrayBuffer());
   }
 
-  async getVerifierKeys(circuitIds: string[]): Promise<any> {
-    return Promise.all(
-      circuitIds.map(async (id) => [id, await this.getVerifierKey(id)])
-    );
+  async getVerifierKeys(circuitIds: string[]): Promise<[string, any][]> {
+    return Promise.all(circuitIds.map(async (id): Promise<[string, any]> => [id, await this.getVerifierKey(id)]));
   }
 
-  async get(circuitId: string): Promise<any> {
+  async get(circuitId: string) {
     return {
       circuitId,
       zkir: await this.getZKIR(circuitId),
@@ -59,142 +62,208 @@ class BrowserZkConfigProvider {
   }
 }
 
-// 2. Browser-native PrivateStateProvider backed by LocalStorage to prevent native LevelDB compilation errors
+// ── Browser Private State Provider (localStorage) ──
 const browserPrivateStateProvider = {
-  get: async (key: string): Promise<any> => {
+  get: async (key: string) => {
     const val = localStorage.getItem(`midnight_state_${key}`);
     return val ? JSON.parse(val) : null;
   },
-  set: async (key: string, val: any): Promise<void> => {
+  set: async (key: string, val: any) => {
     localStorage.setItem(`midnight_state_${key}`, JSON.stringify(val));
   },
-  delete: async (key: string): Promise<void> => {
+  delete: async (key: string) => {
     localStorage.removeItem(`midnight_state_${key}`);
   },
 };
 
+// ── Hook ──
 export const useMidnight = () => {
-  const [wallet, setWallet] = useState<WalletConnectedAPI | null>(null);
-  const [unshieldedAddress, setUnshieldedAddress] = useState<string | null>(null);
-  const [shieldedAddress, setShieldedAddress] = useState<string | null>(null);
-  const [contract, setContract] = useState<any | null>(null);
-  const [isConnecting, setIsConnecting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [state, setState] = useState<WalletState>({
+    isConnected: false,
+    isConnecting: false,
+    unshieldedAddress: null,
+    shieldedAddress: null,
+    walletName: null,
+    error: null,
+    contract: null,
+  });
 
-  // Check if wallet was previously connected
-  useEffect(() => {
-    const autoConnect = async () => {
-      const previouslyConnected = localStorage.getItem('midnight_lace_connected') === 'true';
-      const laceWallet = (window as any).midnight?.mnLace;
-      if (previouslyConnected && laceWallet) {
-        try {
-          const api = await laceWallet.enable();
-          await setupConnection(api);
-        } catch (e) {
-          localStorage.removeItem('midnight_lace_connected');
-        }
+  // Detect available Midnight wallets
+  const detectWallets = useCallback((): { id: string; name: string; icon: string }[] => {
+    const midnightObj = (window as any).midnight;
+    if (!midnightObj) return [];
+
+    const wallets: { id: string; name: string; icon: string }[] = [];
+    for (const key of Object.keys(midnightObj)) {
+      const entry = midnightObj[key];
+      if (entry && typeof entry === 'object' && typeof entry.connect === 'function') {
+        wallets.push({
+          id: key,
+          name: entry.name || key,
+          icon: entry.icon || '',
+        });
       }
-    };
-    autoConnect();
+    }
+    return wallets;
   }, []);
 
-  const setupConnection = async (api: WalletConnectedAPI) => {
+  // Setup connection with a connected wallet API
+  const setupConnection = useCallback(async (api: any, walletName: string) => {
     try {
       const { unshieldedAddress: uAddr } = await api.getUnshieldedAddress();
       const { shieldedAddress: sAddr } = await api.getShieldedAddresses();
-      
-      setUnshieldedAddress(uAddr);
-      setShieldedAddress(sAddr);
-      setWallet(api);
-      localStorage.setItem('midnight_lace_connected', 'true');
 
-      // Setup providers
-      const zkConfigProvider = new BrowserZkConfigProvider();
-      const publicDataProvider = indexerPublicDataProvider(
-        PREPROD_CONFIG.indexer,
-        PREPROD_CONFIG.indexerWS
-      );
+      setState(prev => ({
+        ...prev,
+        isConnected: true,
+        isConnecting: false,
+        unshieldedAddress: uAddr,
+        shieldedAddress: sAddr,
+        walletName,
+        error: null,
+      }));
 
-      // Try to get proof provider from Lace; fallback to localhost HTTP proof provider
-      const proofProvider = api.getProvingProvider 
-        ? await api.getProvingProvider(zkConfigProvider.asKeyMaterialProvider()) 
-        : httpClientProofProvider(PREPROD_CONFIG.proofServer, zkConfigProvider);
+      localStorage.setItem('midnight_wallet_connected', 'true');
+      localStorage.setItem('midnight_wallet_id', walletName);
 
-      const providers = {
-        privateStateProvider: browserPrivateStateProvider,
-        publicDataProvider,
-        zkConfigProvider,
-        proofProvider,
-        walletProvider: api,
-        midnightProvider: api,
-      };
+      // Lazy-load contract SDK modules only when needed
+      try {
+        const [{ CompiledContract }, { findDeployedContract }, { indexerPublicDataProvider }, { httpClientProofProvider }, HelloWorld] = await Promise.all([
+          import('@midnight-ntwrk/compact-js'),
+          import('@midnight-ntwrk/midnight-js-contracts'),
+          import('@midnight-ntwrk/midnight-js-indexer-public-data-provider'),
+          import('@midnight-ntwrk/midnight-js-http-client-proof-provider'),
+          import('../../managed/contract/index.js'),
+        ]);
 
-      // Wrap compiled contract with witness functions
-      const compiledContract = CompiledContract.make('hello-world', HelloWorld.Contract).pipe(
-        CompiledContract.withWitnesses({
-          myBidAmount: (context: any) => {
-            return [context.privateState, context.privateState.bidAmount];
-          },
-        }),
-        CompiledContract.withCompiledFileAssets('/managed')
-      );
+        const zkConfigProvider = new BrowserZkConfigProvider();
+        const publicDataProvider = indexerPublicDataProvider(PREPROD_CONFIG.indexer, PREPROD_CONFIG.indexerWS);
 
-      // Locate on-chain contract
-      const instance = await findDeployedContract(providers as any, {
-        compiledContract: compiledContract as any,
-        contractAddress: PREPROD_CONFIG.contractAddress,
-        privateStateId: 'hello-world-state',
-      });
+        const proofProvider = api.getProvingProvider
+          ? await api.getProvingProvider(zkConfigProvider.asKeyMaterialProvider())
+          : httpClientProofProvider(PREPROD_CONFIG.proofServer, zkConfigProvider);
 
-      setContract(instance);
-      setError(null);
-    } catch (e: any) {
-      console.error(e);
-      setError(e.message || 'Failed to initialize connection and contract');
-    }
-  };
+        const providers = {
+          privateStateProvider: browserPrivateStateProvider,
+          publicDataProvider,
+          zkConfigProvider,
+          proofProvider,
+          walletProvider: api,
+          midnightProvider: api,
+        };
 
-  const connectWallet = useCallback(async () => {
-    setIsConnecting(true);
-    setError(null);
-    try {
-      const laceWallet = (window as any).midnight?.mnLace;
-      if (!laceWallet) {
-        throw new Error('Lace Beta Wallet extension is not installed. Please install it.');
+        const compiledContract = CompiledContract.make('hello-world', HelloWorld.Contract).pipe(
+          CompiledContract.withWitnesses({
+            myBidAmount: (context: any) => [context.privateState, context.privateState.bidAmount],
+          }),
+          CompiledContract.withCompiledFileAssets('/managed')
+        );
+
+        const instance = await findDeployedContract(providers as any, {
+          compiledContract: compiledContract as any,
+          contractAddress: PREPROD_CONFIG.contractAddress,
+          privateStateId: 'hello-world-state',
+        });
+
+        setState(prev => ({ ...prev, contract: instance }));
+      } catch (contractErr: any) {
+        console.warn('Contract binding skipped:', contractErr.message);
+        // Wallet is still connected, contract binding is separate
       }
-      const api = await laceWallet.enable();
-      await setupConnection(api);
     } catch (e: any) {
-      setError(e.message || 'Lace wallet connection failed');
-      localStorage.removeItem('midnight_lace_connected');
-    } finally {
-      setIsConnecting(false);
+      setState(prev => ({
+        ...prev,
+        isConnecting: false,
+        error: e.message || 'Failed to read wallet addresses',
+      }));
     }
   }, []);
 
-  const disconnectWallet = useCallback(async () => {
-    const laceWallet = (window as any).midnight?.mnLace;
-    if (laceWallet && laceWallet.disconnect) {
+  // Auto-reconnect on page load
+  useEffect(() => {
+    const tryReconnect = async () => {
+      const wasConnected = localStorage.getItem('midnight_wallet_connected') === 'true';
+      const walletId = localStorage.getItem('midnight_wallet_id');
+      if (!wasConnected || !walletId) return;
+
+      const midnightObj = (window as any).midnight;
+      const walletEntry = midnightObj?.[walletId];
+      if (!walletEntry || typeof walletEntry.connect !== 'function') return;
+
       try {
-        await laceWallet.disconnect();
-      } catch (e) {}
+        const api = await walletEntry.connect('preprod');
+        await setupConnection(api, walletId);
+      } catch {
+        localStorage.removeItem('midnight_wallet_connected');
+        localStorage.removeItem('midnight_wallet_id');
+      }
+    };
+
+    // Wait a bit for wallet extensions to inject
+    const timer = setTimeout(tryReconnect, 800);
+    return () => clearTimeout(timer);
+  }, [setupConnection]);
+
+  // Connect to a specific wallet
+  const connectWallet = useCallback(async (walletId?: string) => {
+    setState(prev => ({ ...prev, isConnecting: true, error: null }));
+
+    try {
+      const midnightObj = (window as any).midnight;
+      if (!midnightObj) {
+        throw new Error('No Midnight wallet detected. Please install the 1AM wallet extension.');
+      }
+
+      // Default to 1AM, or find the first available wallet
+      const targetId = walletId || '1AM';
+      const walletEntry = midnightObj[targetId];
+
+      if (!walletEntry || typeof walletEntry.connect !== 'function') {
+        // Try to find any available wallet
+        const available = Object.keys(midnightObj).find(
+          k => midnightObj[k] && typeof midnightObj[k].connect === 'function'
+        );
+        if (!available) {
+          throw new Error('No compatible Midnight wallet found. Install the 1AM wallet extension.');
+        }
+        const api = await midnightObj[available].connect('preprod');
+        await setupConnection(api, available);
+        return;
+      }
+
+      const api = await walletEntry.connect('preprod');
+      await setupConnection(api, targetId);
+    } catch (e: any) {
+      setState(prev => ({
+        ...prev,
+        isConnecting: false,
+        error: e.message || 'Wallet connection failed',
+      }));
+      localStorage.removeItem('midnight_wallet_connected');
+      localStorage.removeItem('midnight_wallet_id');
     }
-    setWallet(null);
-    setUnshieldedAddress(null);
-    setShieldedAddress(null);
-    setContract(null);
-    localStorage.removeItem('midnight_lace_connected');
+  }, [setupConnection]);
+
+  // Disconnect
+  const disconnectWallet = useCallback(async () => {
+    setState({
+      isConnected: false,
+      isConnecting: false,
+      unshieldedAddress: null,
+      shieldedAddress: null,
+      walletName: null,
+      error: null,
+      contract: null,
+    });
+    localStorage.removeItem('midnight_wallet_connected');
+    localStorage.removeItem('midnight_wallet_id');
   }, []);
 
   return {
-    wallet,
-    unshieldedAddress,
-    shieldedAddress,
-    contract,
-    isConnecting,
-    error,
+    ...state,
     connectWallet,
     disconnectWallet,
-    isConnected: !!wallet,
+    detectWallets,
+    preprodConfig: PREPROD_CONFIG,
   };
 };
