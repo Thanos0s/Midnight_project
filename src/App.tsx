@@ -1,331 +1,263 @@
-import React from 'react';
-import { motion } from 'framer-motion';
+import React, { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useMidnight } from './hooks/useMidnight';
 import { WalletConnect } from './components/WalletConnect';
 import { CircuitCall } from './components/CircuitCall';
 
-// ── Animation Variants ──
-const fadeUp = (delay = 0) => ({
-  initial: { opacity: 0, y: 30 },
-  animate: { opacity: 1, y: 0 },
-  transition: { duration: 0.6, delay, ease: [0.16, 1, 0.3, 1] as const },
-});
-
-const fadeIn = (delay = 0) => ({
-  initial: { opacity: 0 },
-  animate: { opacity: 1 },
-  transition: { duration: 0.8, delay },
-});
-
-const staggerContainer = {
-  animate: { transition: { staggerChildren: 0.1 } },
-};
-
-const staggerItem = {
-  initial: { opacity: 0, y: 20 },
-  animate: { opacity: 1, y: 0, transition: { duration: 0.5, ease: [0.16, 1, 0.3, 1] as const } },
-};
-
-const FEATURES = [
-  {
-    icon: '🔐',
-    title: 'Zero-Knowledge Proofs',
-    desc: 'Bid amounts are proven valid without ever revealing the number. Your financial intent stays private.',
-  },
-  {
-    icon: '🌙',
-    title: 'Midnight Network',
-    desc: 'Built on Midnight — a privacy-focused blockchain with programmable data protection at the protocol level.',
-  },
-  {
-    icon: '⚡',
-    title: 'Browser-Side Proving',
-    desc: 'ZK proofs are generated locally in your browser. No intermediary ever sees your private inputs.',
-  },
-  {
-    icon: '🔗',
-    title: '1AM Wallet',
-    desc: 'Connect seamlessly with the 1AM wallet extension. Supports shielded and unshielded addresses on Preprod.',
-  },
-  {
-    icon: '📜',
-    title: 'Compact Smart Contract',
-    desc: 'Auction logic written in Compact — Midnight\'s privacy-preserving smart contract language with built-in ZK circuits.',
-  },
-  {
-    icon: '🛡️',
-    title: 'Observable Privacy',
-    desc: 'Others see that a bid was placed. They never see the amount. Privacy you can observe and verify.',
-  },
-];
-
 export const App: React.FC = () => {
   const midnight = useMidnight();
+  const [currentPage, setCurrentPage] = useState<number>(1);
+
+  const handleNext = () => {
+    if (currentPage < 5) setCurrentPage(currentPage + 1);
+  };
+
+  const handleBack = () => {
+    if (currentPage > 1) setCurrentPage(currentPage - 1);
+  };
+
+  // Slide animation variants
+  const slideVariants = {
+    enter: (direction: number) => ({
+      x: direction > 0 ? 50 : -50,
+      opacity: 0
+    }),
+    center: {
+      x: 0,
+      opacity: 1,
+      transition: { duration: 0.3, ease: 'easeOut' as const }
+    },
+    exit: (direction: number) => ({
+      x: direction < 0 ? 50 : -50,
+      opacity: 0,
+      transition: { duration: 0.25, ease: 'easeIn' as const }
+    })
+  };
 
   return (
-    <>
-      {/* ── Animated Background ── */}
-      <div className="gradient-bg">
-        <div className="gradient-orb gradient-orb--purple" />
-        <div className="gradient-orb gradient-orb--blue" />
-        <div className="gradient-orb gradient-orb--teal" />
-      </div>
-      <div className="grid-pattern" />
-
-      {/* ── Navigation ── */}
-      <motion.nav className="nav" {...fadeIn(0.1)}>
-        <div className="nav__logo">
-          <div className="nav__logo-icon">M</div>
-          <span className="nav__logo-text">Midnight Auction</span>
-          <span className="nav__logo-badge">Preprod</span>
+    <div className="app-container">
+      {/* ── Top Header ── */}
+      <header className="top-header">
+        <div className="brand-title">
+          <span className="brand-dot" />
+          Midnight Auction DApp
         </div>
-        <div className="nav__actions">
-          {midnight.isConnected ? (
-            <motion.button
-              className="btn btn--secondary btn--sm"
-              onClick={midnight.disconnectWallet}
-              whileTap={{ scale: 0.97 }}
-            >
-              {midnight.walletName || '1AM'} · Disconnect
-            </motion.button>
-          ) : (
-            <motion.button
-              className="btn btn--primary btn--sm"
-              onClick={() => midnight.connectWallet()}
-              disabled={midnight.isConnecting}
-              whileTap={{ scale: 0.97 }}
-            >
-              {midnight.isConnecting ? 'Connecting...' : 'Connect Wallet'}
-            </motion.button>
-          )}
-        </div>
-      </motion.nav>
-
-      {/* ── Hero ── */}
-      <section className="hero">
-        <motion.div className="hero__badge" {...fadeUp(0.2)}>
-          <span className="hero__badge-dot" />
-          Live on Preprod
-        </motion.div>
-
-        <motion.h1 className="hero__title" {...fadeUp(0.3)}>
-          <span className="hero__title-gradient">Private Auctions</span>
-          <br />
-          <span className="hero__title-accent">Powered by ZK</span>
-        </motion.h1>
-
-        <motion.p className="hero__subtitle" {...fadeUp(0.4)}>
-          Submit sealed bids with zero-knowledge proofs. Your bid amount stays 
-          private — only the proof reaches the chain. Built on the Midnight Network.
-        </motion.p>
-
-        <motion.div className="hero__actions" {...fadeUp(0.5)}>
-          {!midnight.isConnected ? (
-            <motion.button
-              className="btn btn--primary btn--lg"
-              onClick={() => midnight.connectWallet()}
-              disabled={midnight.isConnecting}
-              whileHover={{ scale: 1.03 }}
-              whileTap={{ scale: 0.97 }}
-            >
-              {midnight.isConnecting ? (
-                <><span className="spinner" /> Connecting...</>
-              ) : (
-                'Connect 1AM Wallet →'
-              )}
-            </motion.button>
-          ) : (
-            <motion.button
-              className="btn btn--primary btn--lg"
-              onClick={() => {
-                document.getElementById('interact')?.scrollIntoView({ behavior: 'smooth' });
-              }}
-              whileHover={{ scale: 1.03 }}
-              whileTap={{ scale: 0.97 }}
-            >
-              Start Bidding →
-            </motion.button>
-          )}
-          <motion.a
-            className="btn btn--secondary btn--lg"
-            href="https://github.com/Thanos0s/Midnight_project"
-            target="_blank"
-            rel="noopener noreferrer"
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-          >
-            View Source
-          </motion.a>
-        </motion.div>
-
-        {/* Stats */}
-        <motion.div className="stats" {...fadeUp(0.65)}>
-          <div className="stat">
-            <div className="stat__value">ZK-SNARK</div>
-            <div className="stat__label">Proof System</div>
+        {currentPage > 1 && (
+          <div className="guide-step-indicator">
+            Setup Guide Page {currentPage} of 5
           </div>
-          <div className="stat">
-            <div className="stat__value">Preprod</div>
-            <div className="stat__label">Network</div>
-          </div>
-          <div className="stat">
-            <div className="stat__value">100%</div>
-            <div className="stat__label">Bid Privacy</div>
-          </div>
-        </motion.div>
-      </section>
-
-      {/* ── Features Section ── */}
-      <section className="section">
-        <motion.div
-          className="section__header"
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: '-100px' }}
-          transition={{ duration: 0.5 }}
-        >
-          <div className="section__label">Why Private Bidding</div>
-          <h2 className="section__title">Standard auctions expose your strategy.<br />This one doesn't.</h2>
-        </motion.div>
-
-        <motion.div
-          className="features-grid"
-          variants={staggerContainer}
-          initial="initial"
-          whileInView="animate"
-          viewport={{ once: true, margin: '-80px' }}
-        >
-          {FEATURES.map((f, i) => (
-            <motion.div key={i} className="card feature-card" variants={staggerItem}>
-              <div className="feature-card__icon">{f.icon}</div>
-              <div className="feature-card__title">{f.title}</div>
-              <div className="feature-card__desc">{f.desc}</div>
-            </motion.div>
-          ))}
-        </motion.div>
-      </section>
-
-      {/* ── Wallet + Interact Section ── */}
-      <section className="section" id="interact">
-        <motion.div
-          className="section__header"
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: '-100px' }}
-          transition={{ duration: 0.5 }}
-        >
-          <div className="section__label">DApp Interface</div>
-          <h2 className="section__title">
-            {midnight.isConnected ? 'Connected — Ready to Bid' : 'Connect your wallet to begin'}
-          </h2>
-        </motion.div>
-
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.5, delay: 0.15 }}
-        >
-          <WalletConnect
-            isConnected={midnight.isConnected}
-            isConnecting={midnight.isConnecting}
-            unshieldedAddress={midnight.unshieldedAddress}
-            shieldedAddress={midnight.shieldedAddress}
-            walletName={midnight.walletName}
-            error={midnight.error}
-            connectWallet={midnight.connectWallet}
-            disconnectWallet={midnight.disconnectWallet}
-          />
-        </motion.div>
-
-        {/* Contract Loading */}
-        {midnight.isConnected && !midnight.contract && !midnight.error && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '10px',
-              padding: '16px',
-              marginTop: '16px',
-              borderRadius: '12px',
-              background: 'rgba(255,255,255,0.03)',
-              border: '1px solid rgba(255,255,255,0.06)',
-              fontSize: '13px',
-              color: '#a78bfa',
-              maxWidth: '560px',
-              margin: '16px auto 0',
-            }}
-          >
-            <span className="spinner" />
-            Locating contract on Preprod...
-          </motion.div>
         )}
+      </header>
 
-        {midnight.isConnected && midnight.contract && (
+      {/* ── main content slide ── */}
+      <main className="slide-frame">
+        <AnimatePresence mode="wait" custom={currentPage}>
           <motion.div
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-            style={{ marginTop: '24px' }}
+            key={currentPage}
+            variants={slideVariants}
+            initial="enter"
+            animate="center"
+            exit="exit"
+            style={{ width: '100%' }}
           >
-            <CircuitCall contract={midnight.contract} isConnected={midnight.isConnected} />
-          </motion.div>
-        )}
-      </section>
+            {/* ── Page 1: Welcome ── */}
+            {currentPage === 1 && (
+              <div>
+                <div className="terminal-block">
+                  <div className="terminal-header">
+                    <span>Terminal</span>
+                    <span>Status</span>
+                  </div>
+                  <div className="terminal-content" style={{ color: '#a78bfa' }}>
+                    &gt; Building your professional website...<br />
+                    &gt; Installing zero-knowledge proofs &amp; components...<br />
+                    &gt; Website ready!
+                  </div>
+                </div>
+                
+                <h1 className="title-primary" style={{ marginTop: '32px' }}>
+                  Created by <br />
+                  <span style={{ color: '#a78bfa' }}>Thanos0s</span>
+                </h1>
+                
+                <p className="subtitle-primary">
+                  Follow along. Connect and transact in minutes. No cryptography experience required.
+                </p>
 
-      {/* ── Contract Info Section ── */}
-      <section className="section">
-        <motion.div
-          className="card"
-          style={{ maxWidth: '560px', margin: '0 auto' }}
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.5 }}
-        >
-          <div style={{ fontSize: '12px', fontWeight: 600, color: '#8b5cf6', textTransform: 'uppercase' as const, letterSpacing: '0.08em', marginBottom: '12px' }}>
-            Contract Details
-          </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-            <div>
-              <div style={{ fontSize: '11px', color: '#52525b', textTransform: 'uppercase' as const, letterSpacing: '0.06em', marginBottom: '4px' }}>Network</div>
-              <div style={{ fontSize: '14px', color: '#fafafa', fontWeight: 500 }}>Midnight Preprod</div>
-            </div>
-            <div>
-              <div style={{ fontSize: '11px', color: '#52525b', textTransform: 'uppercase' as const, letterSpacing: '0.06em', marginBottom: '4px' }}>Contract Address</div>
-              <div style={{
-                fontFamily: "'JetBrains Mono', monospace",
-                fontSize: '11px',
-                color: '#a1a1aa',
-                padding: '8px 12px',
-                background: 'rgba(0,0,0,0.3)',
-                borderRadius: '6px',
-                wordBreak: 'break-all' as const,
-              }}>
-                b20f8f836047ce33353b13e1e85d8dc95a55f306e876cb7b822bbaad4bb1acf6
+                <div className="protip-box">
+                  <span className="protip-tag">PRO TIP</span>
+                  <span>Click the Next button below to begin setting up your wallet and submitting private bids.</span>
+                </div>
               </div>
-            </div>
-            <div>
-              <div style={{ fontSize: '11px', color: '#52525b', textTransform: 'uppercase' as const, letterSpacing: '0.06em', marginBottom: '4px' }}>Language</div>
-              <div style={{ fontSize: '14px', color: '#fafafa', fontWeight: 500 }}>Compact</div>
-            </div>
-          </div>
-        </motion.div>
-      </section>
+            )}
 
-      {/* ── Footer ── */}
-      <footer className="footer">
-        <p className="footer__text">
-          Midnight Builder Challenge — Level 2 Submission · Built by{' '}
-          <a className="footer__link" href="https://github.com/Thanos0s" target="_blank" rel="noopener noreferrer">
-            Thanos0s
-          </a>
-        </p>
+            {/* ── Page 2: What You Build & Need ── */}
+            {currentPage === 2 && (
+              <div>
+                <h2 className="title-primary">What You're Building</h2>
+                <p className="subtitle-primary" style={{ marginBottom: '24px' }}>
+                  A professional, animated auction website using AI and the Midnight SDK.
+                </p>
+
+                <div className="info-row">
+                  <div className="info-card">
+                    <h4>What You'll Need</h4>
+                    <ul>
+                      <li>A browser with 1AM Wallet extension</li>
+                      <li>Midnight Preprod testnet active</li>
+                      <li>tNIGHT test tokens</li>
+                    </ul>
+                  </div>
+
+                  <div className="info-card">
+                    <h4>What You'll Get</h4>
+                    <ul>
+                      <li>Private bids shielded locally</li>
+                      <li>Framer Motion transitions</li>
+                      <li>1AM Wallet v4 integration</li>
+                      <li>Clean, modern Corda design</li>
+                    </ul>
+                  </div>
+                </div>
+
+                <div className="protip-box">
+                  <span className="protip-tag">TIME</span>
+                  <span>Total setup time is less than 5 minutes.</span>
+                </div>
+              </div>
+            )}
+
+            {/* ── Page 3: Wallet Connection ── */}
+            {currentPage === 3 && (
+              <div>
+                <h2 className="title-primary">Connect Wallet</h2>
+                <p className="subtitle-primary">
+                  Verify the 1AM Wallet extension is active and set to Preprod network.
+                </p>
+
+                <div style={{ margin: '32px 0' }}>
+                  <WalletConnect
+                    isConnected={midnight.isConnected}
+                    isConnecting={midnight.isConnecting}
+                    unshieldedAddress={midnight.unshieldedAddress}
+                    shieldedAddress={midnight.shieldedAddress}
+                    walletName={midnight.walletName}
+                    error={midnight.error}
+                    connectWallet={midnight.connectWallet}
+                    disconnectWallet={midnight.disconnectWallet}
+                  />
+                </div>
+
+                <div className="protip-box" style={{ marginTop: '24px' }}>
+                  <span className="protip-tag">PRO TIP</span>
+                  <span>Once connected, your public (unshielded) and private (shielded) addresses will be fetched automatically.</span>
+                </div>
+              </div>
+            )}
+
+            {/* ── Page 4: Interactive Transactions (Bid / Winner) ── */}
+            {currentPage === 4 && (
+              <div>
+                <h2 className="title-primary">Interact &amp; Transact</h2>
+                <p className="subtitle-primary" style={{ marginBottom: '24px' }}>
+                  Submit private bids or close the auction. Zero-knowledge proofs are generated locally in your browser.
+                </p>
+
+                {!midnight.isConnected ? (
+                  <div className="info-card" style={{ textAlign: 'center', padding: '40px 24px' }}>
+                    <h4 style={{ color: '#ef4444' }}>⚠️ Wallet Required</h4>
+                    <p style={{ marginTop: '8px' }}>
+                      Please go back to Page 3 and connect your 1AM wallet before attempting to transact.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="bid-panel-layout">
+                    {/* Contract status */}
+                    {midnight.isConnected && !midnight.contract && !midnight.error && (
+                      <div className="terminal-block">
+                        <div className="terminal-content" style={{ color: '#a78bfa', textAlign: 'center' }}>
+                          <span className="spinner-corda" style={{ marginRight: '8px' }} />
+                          Locating deployed contract on Preprod indexer...
+                        </div>
+                      </div>
+                    )}
+                    
+                    {midnight.contract && (
+                      <CircuitCall
+                        contract={midnight.contract}
+                        isConnected={midnight.isConnected}
+                      />
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* ── Page 5: Quick Reference ── */}
+            {currentPage === 5 && (
+              <div>
+                <h2 className="title-primary">Quick Reference</h2>
+                <p className="subtitle-primary">
+                  Review the contract parameters and technical specifications of this project.
+                </p>
+
+                <div className="terminal-block">
+                  <div className="terminal-header">
+                    <span>Technical Reference</span>
+                    <span>Preprod</span>
+                  </div>
+                  <div className="terminal-content" style={{ fontSize: '12px' }}>
+                    <strong>Contract Address:</strong><br />
+                    <span style={{ color: '#a78bfa', fontFamily: 'monospace' }}>
+                      b20f8f836047ce33353b13e1e85d8dc95a55f306e876cb7b822bbaad4bb1acf6
+                    </span><br /><br />
+                    
+                    <strong>Repository:</strong><br />
+                    <a href="https://github.com/Thanos0s/Midnight_project" target="_blank" rel="noreferrer" style={{ color: '#a78bfa' }}>
+                      github.com/Thanos0s/Midnight_project
+                    </a><br /><br />
+
+                    <strong>Technology Stack:</strong><br />
+                    - Midnight.js SDK v4.0.4<br />
+                    - Compact Privacy Contracts<br />
+                    - React 18 / Vite 5 / TypeScript<br />
+                    - Framer Motion Animations
+                  </div>
+                </div>
+
+                <div className="protip-box">
+                  <span className="protip-tag">COMPLETE</span>
+                  <span>Your setup and transactions are complete. You can now publish and host this application.</span>
+                </div>
+              </div>
+            )}
+          </motion.div>
+        </AnimatePresence>
+      </main>
+
+      {/* ── Navigation Footer ── */}
+      <footer className="btn-nav-container">
+        <button
+          className="btn-corda btn-corda--secondary"
+          onClick={handleBack}
+          disabled={currentPage === 1}
+        >
+          &lt; Back
+        </button>
+
+        <div style={{ fontSize: '13px', color: '#545459', fontFamily: 'monospace' }}>
+          PAGE {currentPage} OF 5
+        </div>
+
+        <button
+          className="btn-corda"
+          onClick={handleNext}
+          disabled={currentPage === 5}
+        >
+          Next &gt;
+        </button>
       </footer>
-    </>
+    </div>
   );
 };
 

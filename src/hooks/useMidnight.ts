@@ -88,25 +88,6 @@ export const useMidnight = () => {
     contract: null,
   });
 
-  // Detect available Midnight wallets
-  const detectWallets = useCallback((): { id: string; name: string; icon: string }[] => {
-    const midnightObj = (window as any).midnight;
-    if (!midnightObj) return [];
-
-    const wallets: { id: string; name: string; icon: string }[] = [];
-    for (const key of Object.keys(midnightObj)) {
-      const entry = midnightObj[key];
-      if (entry && typeof entry === 'object' && typeof entry.connect === 'function') {
-        wallets.push({
-          id: key,
-          name: entry.name || key,
-          icon: entry.icon || '',
-        });
-      }
-    }
-    return wallets;
-  }, []);
-
   // Setup connection with a connected wallet API
   const setupConnection = useCallback(async (api: any, walletName: string) => {
     try {
@@ -139,7 +120,7 @@ export const useMidnight = () => {
         const zkConfigProvider = new BrowserZkConfigProvider();
         const publicDataProvider = indexerPublicDataProvider(PREPROD_CONFIG.indexer, PREPROD_CONFIG.indexerWS);
 
-        const proofProvider = api.getProvingProvider
+        const proofProvider = (typeof api.getProvingProvider === 'function')
           ? await api.getProvingProvider(zkConfigProvider.asKeyMaterialProvider())
           : httpClientProofProvider(PREPROD_CONFIG.proofServer, zkConfigProvider);
 
@@ -168,7 +149,6 @@ export const useMidnight = () => {
         setState(prev => ({ ...prev, contract: instance }));
       } catch (contractErr: any) {
         console.warn('Contract binding skipped:', contractErr.message);
-        // Wallet is still connected, contract binding is separate
       }
     } catch (e: any) {
       setState(prev => ({
@@ -188,10 +168,17 @@ export const useMidnight = () => {
 
       const midnightObj = (window as any).midnight;
       const walletEntry = midnightObj?.[walletId];
-      if (!walletEntry || typeof walletEntry.connect !== 'function') return;
+      if (!walletEntry) return;
 
       try {
-        const api = await walletEntry.connect('preprod');
+        let api;
+        if (typeof walletEntry.connect === 'function') {
+          api = await walletEntry.connect('preprod');
+        } else if (typeof walletEntry.enable === 'function') {
+          api = await walletEntry.enable();
+        } else {
+          return;
+        }
         await setupConnection(api, walletId);
       } catch {
         localStorage.removeItem('midnight_wallet_connected');
@@ -199,7 +186,6 @@ export const useMidnight = () => {
       }
     };
 
-    // Wait a bit for wallet extensions to inject
     const timer = setTimeout(tryReconnect, 800);
     return () => clearTimeout(timer);
   }, [setupConnection]);
@@ -214,24 +200,33 @@ export const useMidnight = () => {
         throw new Error('No Midnight wallet detected. Please install the 1AM wallet extension.');
       }
 
-      // Default to 1AM, or find the first available wallet
       const targetId = walletId || '1AM';
       const walletEntry = midnightObj[targetId];
 
-      if (!walletEntry || typeof walletEntry.connect !== 'function') {
-        // Try to find any available wallet
+      if (!walletEntry || (typeof walletEntry.connect !== 'function' && typeof walletEntry.enable !== 'function')) {
         const available = Object.keys(midnightObj).find(
-          k => midnightObj[k] && typeof midnightObj[k].connect === 'function'
+          k => midnightObj[k] && (typeof midnightObj[k].connect === 'function' || typeof midnightObj[k].enable === 'function')
         );
         if (!available) {
           throw new Error('No compatible Midnight wallet found. Install the 1AM wallet extension.');
         }
-        const api = await midnightObj[available].connect('preprod');
+        
+        let api;
+        if (typeof midnightObj[available].connect === 'function') {
+          api = await midnightObj[available].connect('preprod');
+        } else {
+          api = await midnightObj[available].enable();
+        }
         await setupConnection(api, available);
         return;
       }
 
-      const api = await walletEntry.connect('preprod');
+      let api;
+      if (typeof walletEntry.connect === 'function') {
+        api = await walletEntry.connect('preprod');
+      } else {
+        api = await walletEntry.enable();
+      }
       await setupConnection(api, targetId);
     } catch (e: any) {
       setState(prev => ({
@@ -263,7 +258,6 @@ export const useMidnight = () => {
     ...state,
     connectWallet,
     disconnectWallet,
-    detectWallets,
     preprodConfig: PREPROD_CONFIG,
   };
 };
