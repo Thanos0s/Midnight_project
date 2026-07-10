@@ -54,4 +54,4 @@ Open `http://localhost:3000` in your browser.
 
 ## Demo Video
 
-[PLACEHOLDER — add link after recording]
+https://drive.google.com/file/d/13XFDuUnzI2TqIMR1Ju4jUzR-w4nIjG3_/view?usp=sharing
