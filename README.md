@@ -9,7 +9,7 @@ https://midnight-project-ten.vercel.app/
 
 | Network  | Address |
 |----------|---------|
-| Preprod  | `b20f8f836047ce33353b13e1e85d8dc95a55f306e876cb7b822bbaad4bb1acf6` |
+| Preprod  | [`b20f8f836047ce33353b13e1e85d8dc95a55f306e876cb7b822bbaad4bb1acf6`](https://midnightexplorer.com/contracts/b20f8f836047ce33353b13e1e85d8dc95a55f306e876cb7b822bbaad4bb1acf6) |
 
 ## What This Does
 
