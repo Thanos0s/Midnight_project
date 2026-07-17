@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc && vite build",
+    "build": "tsc && vite build && npx esbuild managed/contract/index.js --bundle --format=esm --loader:.wasm=dataurl --outfile=dist/managed/contract/index.js",
     "preview": "vite preview",
     "compile": "compact compile contracts/auction.compact managed",
     "test": "node --test test.js",

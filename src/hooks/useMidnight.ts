@@ -171,11 +171,21 @@ export const useMidnight = () => {
 
       // Lazy-load contract SDK modules only when needed
       try {
-        const [{ CompiledContract }, { findDeployedContract }, { indexerPublicDataProvider }, { httpClientProofProvider }, HelloWorld] = await Promise.all([
+        const [
+          { CompiledContract },
+          { findDeployedContract },
+          { indexerPublicDataProvider },
+          { httpClientProofProvider },
+          { toHex, fromHex },
+          ledger,
+          HelloWorld
+        ] = await Promise.all([
           import('@midnight-ntwrk/compact-js'),
           import('@midnight-ntwrk/midnight-js-contracts'),
           import('@midnight-ntwrk/midnight-js-indexer-public-data-provider'),
           import('@midnight-ntwrk/midnight-js-http-client-proof-provider'),
+          import('@midnight-ntwrk/midnight-js-utils'),
+          import('@midnight-ntwrk/ledger-v8'),
           import('../../managed/contract/index.js'),
         ]);
 
@@ -186,13 +196,33 @@ export const useMidnight = () => {
           ? await api.getProvingProvider(zkConfigProvider.asKeyMaterialProvider())
           : httpClientProofProvider(activeConfig.proofServer, zkConfigProvider);
  
+        const shieldedAddresses = await api.getShieldedAddresses();
+
         const providers = {
           privateStateProvider: browserPrivateStateProvider,
           publicDataProvider,
           zkConfigProvider,
           proofProvider,
-          walletProvider: api,
-          midnightProvider: api,
+          walletProvider: {
+            getCoinPublicKey: () => shieldedAddresses.shieldedCoinPublicKey,
+            getEncryptionPublicKey: () => shieldedAddresses.shieldedEncryptionPublicKey,
+            balanceTx: async (tx: any) => {
+              const txHex = toHex(tx.serialize());
+              const balanced = await api.balanceUnsealedTransaction(txHex);
+              return ledger.Transaction.deserialize(
+                'signature',
+                'proof',
+                'binding',
+                fromHex(balanced.tx)
+              );
+            }
+          },
+          midnightProvider: {
+            submitTx: async (tx: any) => {
+              await api.submitTransaction(toHex(tx.serialize()));
+              return tx.identifiers()[0];
+            }
+          },
         };
  
         const compiledContract = CompiledContract.make('hello-world', HelloWorld.Contract).pipe(
@@ -355,11 +385,21 @@ export const useMidnight = () => {
         api = await walletEntry.enable();
       }
 
-      const [{ CompiledContract }, { deployContract }, { indexerPublicDataProvider }, { httpClientProofProvider }, HelloWorld] = await Promise.all([
+      const [
+        { CompiledContract },
+        { deployContract },
+        { indexerPublicDataProvider },
+        { httpClientProofProvider },
+        { toHex, fromHex },
+        ledger,
+        HelloWorld
+      ] = await Promise.all([
         import('@midnight-ntwrk/compact-js'),
         import('@midnight-ntwrk/midnight-js-contracts'),
         import('@midnight-ntwrk/midnight-js-indexer-public-data-provider'),
         import('@midnight-ntwrk/midnight-js-http-client-proof-provider'),
+        import('@midnight-ntwrk/midnight-js-utils'),
+        import('@midnight-ntwrk/ledger-v8'),
         import('../../managed/contract/index.js'),
       ]);
 
@@ -370,13 +410,33 @@ export const useMidnight = () => {
         ? await api.getProvingProvider(zkConfigProvider.asKeyMaterialProvider())
         : httpClientProofProvider(activeConfig.proofServer, zkConfigProvider);
 
+      const shieldedAddresses = await api.getShieldedAddresses();
+
       const providers = {
         privateStateProvider: browserPrivateStateProvider,
         publicDataProvider,
         zkConfigProvider,
         proofProvider,
-        walletProvider: api,
-        midnightProvider: api,
+        walletProvider: {
+          getCoinPublicKey: () => shieldedAddresses.shieldedCoinPublicKey,
+          getEncryptionPublicKey: () => shieldedAddresses.shieldedEncryptionPublicKey,
+          balanceTx: async (tx: any) => {
+            const txHex = toHex(tx.serialize());
+            const balanced = await api.balanceUnsealedTransaction(txHex);
+            return ledger.Transaction.deserialize(
+              'signature',
+              'proof',
+              'binding',
+              fromHex(balanced.tx)
+            );
+          }
+        },
+        midnightProvider: {
+          submitTx: async (tx: any) => {
+            await api.submitTransaction(toHex(tx.serialize()));
+            return tx.identifiers()[0];
+          }
+        },
       };
 
       const compiledContract = CompiledContract.make('hello-world', HelloWorld.Contract).pipe(
