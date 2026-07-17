@@ -176,6 +176,7 @@ export const useMidnight = () => {
           { findDeployedContract },
           { indexerPublicDataProvider },
           { httpClientProofProvider },
+          { setNetworkId },
           { toHex, fromHex },
           ledger,
           HelloWorld
@@ -184,10 +185,13 @@ export const useMidnight = () => {
           import('@midnight-ntwrk/midnight-js-contracts'),
           import('@midnight-ntwrk/midnight-js-indexer-public-data-provider'),
           import('@midnight-ntwrk/midnight-js-http-client-proof-provider'),
+          import('@midnight-ntwrk/midnight-js-network-id'),
           import('@midnight-ntwrk/midnight-js-utils'),
           import('@midnight-ntwrk/ledger-v8'),
           import('../../managed/contract/index.js'),
         ]);
+
+        setNetworkId(networkName);
 
         const zkConfigProvider = new BrowserZkConfigProvider();
         const publicDataProvider = indexerPublicDataProvider(activeConfig.indexer, activeConfig.indexerWS);
@@ -390,6 +394,7 @@ export const useMidnight = () => {
         { deployContract },
         { indexerPublicDataProvider },
         { httpClientProofProvider },
+        { setNetworkId },
         { toHex, fromHex },
         ledger,
         HelloWorld
@@ -398,10 +403,13 @@ export const useMidnight = () => {
         import('@midnight-ntwrk/midnight-js-contracts'),
         import('@midnight-ntwrk/midnight-js-indexer-public-data-provider'),
         import('@midnight-ntwrk/midnight-js-http-client-proof-provider'),
+        import('@midnight-ntwrk/midnight-js-network-id'),
         import('@midnight-ntwrk/midnight-js-utils'),
         import('@midnight-ntwrk/ledger-v8'),
         import('../../managed/contract/index.js'),
       ]);
+
+      setNetworkId(networkName);
 
       const zkConfigProvider = new BrowserZkConfigProvider();
       const publicDataProvider = indexerPublicDataProvider(activeConfig.indexer, activeConfig.indexerWS);
