@@ -8,7 +8,9 @@
     "build": "tsc && vite build",
     "preview": "vite preview",
     "compile": "compact compile contracts/auction.compact managed",
-    "test": "node --test test.js"
+    "test": "node --test test.js",
+    "proof:up": "docker compose up -d",
+    "proof:down": "docker compose down"
   },
   "dependencies": {
     "@midnight-ntwrk/compact-js": "2.5.0",

@@ -240,6 +240,49 @@ export const App: React.FC = () => {
                   System Connections
                 </div>
 
+                {/* Network Selector Toggle */}
+                <div style={{
+                  display: 'flex',
+                  gap: '4px',
+                  padding: '4px',
+                  borderRadius: '8px',
+                  background: 'rgba(255,255,255,0.03)',
+                  border: '1px solid rgba(255,255,255,0.06)',
+                }}>
+                  <button
+                    onClick={() => midnight.selectNetwork('preprod')}
+                    className="btn btn--ghost"
+                    style={{
+                      flex: 1,
+                      borderRadius: '6px',
+                      fontSize: '11px',
+                      fontWeight: 600,
+                      padding: '6px',
+                      background: midnight.networkName === 'preprod' ? 'rgba(249, 115, 22, 0.15)' : 'transparent',
+                      color: midnight.networkName === 'preprod' ? '#f97316' : '#71717a',
+                      border: midnight.networkName === 'preprod' ? '1px solid rgba(249, 115, 22, 0.3)' : '1px solid transparent',
+                    }}
+                  >
+                    🔴 Preprod
+                  </button>
+                  <button
+                    onClick={() => midnight.selectNetwork('preview')}
+                    className="btn btn--ghost"
+                    style={{
+                      flex: 1,
+                      borderRadius: '6px',
+                      fontSize: '11px',
+                      fontWeight: 600,
+                      padding: '6px',
+                      background: midnight.networkName === 'preview' ? 'rgba(168, 85, 247, 0.15)' : 'transparent',
+                      color: midnight.networkName === 'preview' ? '#a855f7' : '#71717a',
+                      border: midnight.networkName === 'preview' ? '1px solid rgba(168, 85, 247, 0.3)' : '1px solid transparent',
+                    }}
+                  >
+                    🟣 Preview
+                  </button>
+                </div>
+
                 {/* Wallet connector */}
                 <WalletConnect
                   isConnected={midnight.isConnected}
@@ -280,6 +323,21 @@ export const App: React.FC = () => {
                       marginTop: '4px'
                     }}>
                       {auctionName}
+                    </div>
+                  </div>
+
+                  <div style={{ marginBottom: '16px' }}>
+                    <span style={{ fontSize: '11px', color: 'var(--text-dim)', textTransform: 'uppercase' }}>
+                      Contract Address
+                    </span>
+                    <div style={{
+                      fontSize: '11px',
+                      fontFamily: 'var(--font-mono)',
+                      color: '#a78bfa',
+                      marginTop: '4px',
+                      wordBreak: 'break-all'
+                    }}>
+                      {localStorage.getItem('midnight_contract_address_' + midnight.networkName) || midnight.activeConfig.contractAddress}
                     </div>
                   </div>
 
@@ -388,6 +446,7 @@ export const App: React.FC = () => {
                 <CircuitCall
                   contract={midnight.contract}
                   isConnected={midnight.isConnected}
+                  deployAuction={midnight.deployAuction}
                   mode={consoleMode}
                   auctionStatus={auctionStatus}
                   setAuctionStatus={setAuctionStatus}

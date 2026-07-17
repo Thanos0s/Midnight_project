@@ -1,12 +1,28 @@
 import { useState, useCallback, useEffect } from 'react';
 
-// ── Preprod Network Endpoints ──
-const PREPROD_CONFIG = {
-  indexer: 'https://indexer.preprod.midnight.network/api/v4/graphql',
-  indexerWS: 'wss://indexer.preprod.midnight.network/api/v4/graphql/ws',
-  node: 'https://rpc.preprod.midnight.network',
-  proofServer: 'http://localhost:6300',
-  contractAddress: 'b20f8f836047ce33353b13e1e85d8dc95a55f306e876cb7b822bbaad4bb1acf6',
+// ── Network Configurations ──
+const NETWORK_CONFIGS = {
+  preprod: {
+    indexer: 'https://indexer.preprod.midnight.network/api/v4/graphql',
+    indexerWS: 'wss://indexer.preprod.midnight.network/api/v4/graphql/ws',
+    node: 'https://rpc.preprod.midnight.network',
+    proofServer: 'http://localhost:6300',
+    contractAddress: 'b20f8f836047ce33353b13e1e85d8dc95a55f306e876cb7b822bbaad4bb1acf6',
+  },
+  preview: {
+    indexer: 'https://indexer.preview.midnight.network/api/v4/graphql',
+    indexerWS: 'wss://indexer.preview.midnight.network/api/v4/graphql/ws',
+    node: 'https://rpc.preview.midnight.network',
+    proofServer: 'http://localhost:6300',
+    contractAddress: 'ea1a6071ef28d68962fa7a7605d8dc95a55f306e876cb7b822bbaad4bb1acf6',
+  }
+};
+
+type NetworkName = 'preprod' | 'preview';
+
+const getStoredNetwork = (): NetworkName => {
+  const val = localStorage.getItem('midnight_network_name');
+  return (val === 'preprod' || val === 'preview') ? val : 'preview';
 };
 
 // ── Types ──
@@ -92,6 +108,7 @@ const browserPrivateStateProvider = {
 
 // ── Hook ──
 export const useMidnight = () => {
+  const [networkName, setNetworkNameState] = useState<NetworkName>(getStoredNetwork);
   const [state, setState] = useState<WalletState>({
     isConnected: false,
     isConnecting: false,
@@ -101,6 +118,8 @@ export const useMidnight = () => {
     error: null,
     contract: null,
   });
+
+  const activeConfig = NETWORK_CONFIGS[networkName];
 
   // Setup connection with a connected wallet API
   const setupConnection = useCallback(async (api: any, walletName: string) => {
@@ -132,12 +151,12 @@ export const useMidnight = () => {
         ]);
 
         const zkConfigProvider = new BrowserZkConfigProvider();
-        const publicDataProvider = indexerPublicDataProvider(PREPROD_CONFIG.indexer, PREPROD_CONFIG.indexerWS);
-
+        const publicDataProvider = indexerPublicDataProvider(activeConfig.indexer, activeConfig.indexerWS);
+ 
         const proofProvider = (typeof api.getProvingProvider === 'function')
           ? await api.getProvingProvider(zkConfigProvider.asKeyMaterialProvider())
-          : httpClientProofProvider(PREPROD_CONFIG.proofServer, zkConfigProvider);
-
+          : httpClientProofProvider(activeConfig.proofServer, zkConfigProvider);
+ 
         const providers = {
           privateStateProvider: browserPrivateStateProvider,
           publicDataProvider,
@@ -146,20 +165,21 @@ export const useMidnight = () => {
           walletProvider: api,
           midnightProvider: api,
         };
-
+ 
         const compiledContract = CompiledContract.make('hello-world', HelloWorld.Contract).pipe(
           CompiledContract.withWitnesses({
             myBidAmount: (context: any) => [context.privateState, context.privateState.bidAmount],
           }),
           CompiledContract.withCompiledFileAssets('/managed')
         );
-
+ 
         // Locate on-chain contract
         let instance;
         try {
+          const contractAddress = localStorage.getItem('midnight_contract_address_' + networkName) || activeConfig.contractAddress;
           instance = await findDeployedContract(providers as any, {
             compiledContract: compiledContract as any,
-            contractAddress: PREPROD_CONFIG.contractAddress,
+            contractAddress,
             privateStateId: 'hello-world-state',
           });
         } catch (contractErr: any) {
@@ -178,7 +198,7 @@ export const useMidnight = () => {
             }
           };
         }
-
+ 
         setState(prev => ({ ...prev, contract: instance }));
       } catch (contractErr: any) {
         console.warn('Contract binding skipped:', contractErr.message);
@@ -190,7 +210,7 @@ export const useMidnight = () => {
         error: e.message || 'Failed to read wallet addresses',
       }));
     }
-  }, []);
+  }, [networkName, activeConfig]);
 
   // Auto-reconnect on page load
   useEffect(() => {
@@ -206,7 +226,7 @@ export const useMidnight = () => {
       try {
         let api;
         if (typeof walletEntry.connect === 'function') {
-          api = await walletEntry.connect('preprod');
+          api = await walletEntry.connect(networkName);
         } else if (typeof walletEntry.enable === 'function') {
           api = await walletEntry.enable();
         } else {
@@ -221,7 +241,7 @@ export const useMidnight = () => {
 
     const timer = setTimeout(tryReconnect, 800);
     return () => clearTimeout(timer);
-  }, [setupConnection]);
+  }, [setupConnection, networkName]);
 
   // Connect to a specific wallet
   const connectWallet = useCallback(async (walletId?: string) => {
@@ -246,7 +266,7 @@ export const useMidnight = () => {
         
         let api;
         if (typeof midnightObj[available].connect === 'function') {
-          api = await midnightObj[available].connect('preprod');
+          api = await midnightObj[available].connect(networkName);
         } else {
           api = await midnightObj[available].enable();
         }
@@ -256,7 +276,7 @@ export const useMidnight = () => {
 
       let api;
       if (typeof walletEntry.connect === 'function') {
-        api = await walletEntry.connect('preprod');
+        api = await walletEntry.connect(networkName);
       } else {
         api = await walletEntry.enable();
       }
@@ -270,7 +290,111 @@ export const useMidnight = () => {
       localStorage.removeItem('midnight_wallet_connected');
       localStorage.removeItem('midnight_wallet_id');
     }
-  }, [setupConnection]);
+  }, [setupConnection, networkName]);
+
+  // Select network
+  const selectNetwork = useCallback((name: NetworkName) => {
+    setNetworkNameState(name);
+    localStorage.setItem('midnight_network_name', name);
+    setState({
+      isConnected: false,
+      isConnecting: false,
+      unshieldedAddress: null,
+      shieldedAddress: null,
+      walletName: null,
+      error: null,
+      contract: null,
+    });
+    localStorage.removeItem('midnight_wallet_connected');
+    localStorage.removeItem('midnight_wallet_id');
+  }, []);
+
+  // Deploy contract
+  const deployAuction = useCallback(async (name: string, minBidVal: string) => {
+    setState(prev => ({ ...prev, isConnecting: true, error: null }));
+    try {
+      const walletId = localStorage.getItem('midnight_wallet_id') || '1AM';
+      const midnightObj = (window as any).midnight;
+      const walletEntry = midnightObj?.[walletId];
+      if (!walletEntry) throw new Error('Wallet not connected. Please connect the 1AM wallet.');
+
+      let api;
+      if (typeof walletEntry.connect === 'function') {
+        api = await walletEntry.connect(networkName);
+      } else {
+        api = await walletEntry.enable();
+      }
+
+      const [{ CompiledContract }, { deployContract }, { indexerPublicDataProvider }, { httpClientProofProvider }, HelloWorld] = await Promise.all([
+        import('@midnight-ntwrk/compact-js'),
+        import('@midnight-ntwrk/midnight-js-contracts'),
+        import('@midnight-ntwrk/midnight-js-indexer-public-data-provider'),
+        import('@midnight-ntwrk/midnight-js-http-client-proof-provider'),
+        import('../../managed/contract/index.js'),
+      ]);
+
+      const zkConfigProvider = new BrowserZkConfigProvider();
+      const publicDataProvider = indexerPublicDataProvider(activeConfig.indexer, activeConfig.indexerWS);
+
+      const proofProvider = (typeof api.getProvingProvider === 'function')
+        ? await api.getProvingProvider(zkConfigProvider.asKeyMaterialProvider())
+        : httpClientProofProvider(activeConfig.proofServer, zkConfigProvider);
+
+      const providers = {
+        privateStateProvider: browserPrivateStateProvider,
+        publicDataProvider,
+        zkConfigProvider,
+        proofProvider,
+        walletProvider: api,
+        midnightProvider: api,
+      };
+
+      const compiledContract = CompiledContract.make('hello-world', HelloWorld.Contract).pipe(
+        CompiledContract.withWitnesses({
+          myBidAmount: (context: any) => [context.privateState, context.privateState.bidAmount],
+        }),
+        CompiledContract.withCompiledFileAssets('/managed')
+      );
+
+      // Generate a random 32-byte ID for constructor
+      const randomId = new Uint8Array(32);
+      crypto.getRandomValues(randomId);
+
+      const deployed = await deployContract(providers as any, {
+        compiledContract: compiledContract as any,
+        privateStateId: 'hello-world-state',
+        initialPrivateState: {
+          secretKey: new Uint8Array(32),
+          bidAmount: 0n,
+        },
+        args: [randomId],
+      });
+
+      const contractAddress = deployed.deployTxData.public.contractAddress;
+      
+      localStorage.setItem('midnight_contract_address_' + networkName, contractAddress);
+      activeConfig.contractAddress = contractAddress;
+
+      const instance = deployed;
+
+      setState(prev => ({
+        ...prev,
+        contract: instance,
+        isConnecting: false,
+        error: null,
+      }));
+
+      return { contractAddress, txHash: deployed.deployTxData.public.txHash };
+    } catch (e: any) {
+      const errMsg = e.message || e.toString() || 'Deployment failed';
+      setState(prev => ({
+        ...prev,
+        isConnecting: false,
+        error: errMsg,
+      }));
+      throw e;
+    }
+  }, [networkName, activeConfig]);
 
   // Disconnect
   const disconnectWallet = useCallback(async () => {
@@ -289,8 +413,11 @@ export const useMidnight = () => {
 
   return {
     ...state,
+    networkName,
+    selectNetwork,
     connectWallet,
     disconnectWallet,
-    preprodConfig: PREPROD_CONFIG,
+    deployAuction,
+    activeConfig,
   };
 };

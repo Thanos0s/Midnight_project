@@ -57,3 +57,30 @@ Open `http://localhost:3000` in your browser.
 ## Demo Video
 
 https://drive.google.com/file/d/13XFDuUnzI2TqIMR1Ju4jUzR-w4nIjG3_/view?usp=sharing
+
+## Project Requirements & Submission Checklist
+
+This project was built to meet the following criteria:
+
+### Core Requirements
+- **1AM Wallet Connect / Disconnect:** Successfully implemented.
+- **Circuit Integration:** Circuit called successfully from the frontend with result handling.
+- **Observable Privacy Behavior:** Privacy claim proven without revealing private data.
+- **Preprod Deployment:** Contract deployed to Preprod with a verifiable address.
+- **Commits:** Minimum of 8 meaningful commits.
+
+### 1. UX and Error Handling
+- **Loading States:** UI displays loading indicators while waiting for 1AM wallet connection, generating the ZK proof, and waiting for the transaction to confirm on-chain.
+- **Error Handling:** Graceful error handling when a user rejects the 1AM wallet connection, has insufficient funds, or a circuit call fails.
+
+### 2. Code Quality and Structure
+- **Separation of Concerns:** UI components are separated from the Midnight.js SDK interaction logic.
+- **Clean Code:** Code is clean and free of excessive `console.log` statements or dead code.
+
+### 3. README and Documentation
+- **Local Setup & .env Configuration:** Proper configuration steps are provided to run the UI locally.
+- **Smart Contract Source:** `.compact` source code and compiled artifacts are included in the repository.
+- **Testing Instructions:** Instructions on how to test locally.
+
+### 4. Open Source
+- **License File:** An open-source license (MIT) has been added to clarify terms of use.

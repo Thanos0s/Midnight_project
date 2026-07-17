@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 interface CircuitCallProps {
   contract: any | null;
   isConnected: boolean;
+  deployAuction: (name: string, minBid: string) => Promise<{ contractAddress: string; txHash: string }>;
   mode: 'bidder' | 'host';
   auctionStatus: 'OPEN' | 'CLOSED';
   setAuctionStatus: (status: 'OPEN' | 'CLOSED') => void;
@@ -21,6 +22,7 @@ interface CircuitCallProps {
 export const CircuitCall: React.FC<CircuitCallProps> = ({
   contract,
   isConnected,
+  deployAuction,
   mode,
   auctionStatus,
   setAuctionStatus,
@@ -76,28 +78,31 @@ export const CircuitCall: React.FC<CircuitCallProps> = ({
     setTxHash(null);
     setStatusMessage('🚀 Preparing contract bundle...');
     
-    // Simulate contract deployment
-    setTimeout(() => {
-      setStatusMessage('⚡ Generating zero-knowledge deployment parameters...');
-      setTimeout(() => {
-        setStatusMessage('🔗 Submitting deployment transaction to Preprod...');
-        setTimeout(() => {
-          const mockHash = '0x' + Array.from({ length: 64 }, () => Math.floor(Math.random() * 16).toString(16)).join('');
-          setTxHash(mockHash);
-          
-          // Update live status data on the left panel
-          setAuctionName(newAuctionName);
-          setMinBid(newMinBid);
-          setTimeLeft({ hours: parseInt(newDuration) || 24, minutes: 0, seconds: 0 });
-          setAuctionStatus('OPEN');
-          setTotalBids(0);
-          
-          addTxToHistory('Deploy Contract', mockHash);
-          setStatusMessage('✓ Auction Contract Deployed Successfully!');
-          setIsLoading(false);
-        }, 1500);
-      }, 1500);
-    }, 1000);
+    try {
+      await new Promise(r => setTimeout(r, 600));
+      setStatusMessage('⚡ Generating zero-knowledge parameters (connecting to local proof server)...');
+      
+      const result = await deployAuction(newAuctionName, newMinBid);
+      
+      setStatusMessage('🔗 Submitting deployment transaction to Preprod...');
+      setTxHash(result.txHash);
+      
+      // Update live status data on the left panel
+      setAuctionName(newAuctionName);
+      setMinBid(newMinBid);
+      setTimeLeft({ hours: parseInt(newDuration) || 24, minutes: 0, seconds: 0 });
+      setAuctionStatus('OPEN');
+      setTotalBids(0);
+      
+      addTxToHistory('Deploy Contract', result.txHash);
+      setStatusMessage('✓ Auction Contract Deployed Successfully!');
+    } catch (err: any) {
+      console.error(err);
+      setError(err.message || 'ZK Proving or transaction failed');
+      setStatusMessage('');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleSubmitBid = async (e: React.FormEvent) => {
