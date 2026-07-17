@@ -6,9 +6,8 @@
 https://midnight-project-ten.vercel.app/
 
 ## Contract Address
+| [`2386353dac0e0fcb93203eee32cb1e8f14e04b924d84b41b9e8d3e8c99893a6a`](https://preview.midnightexplorer.com/contracts/2386353dac0e0fcb93203eee32cb1e8f14e04b924d84b41b9e8d3e8c99893a6a) |
 
-| Preview  | [`2386353dac0e0fcb93203eee32cb1e8f14e04b924d84b41b9e8d3e8c99893a6a`](https://preview.midnightexplorer.com/contracts/2386353dac0e0fcb93203eee32cb1e8f14e04b924d84b41b9e8d3e8c99893a6a) |
-| Preprod  | `b20f8f836047ce33353b13e1e85d8dc95a55f306e876cb7b822bbaad4bb1acf6` |
 
 ##Used the preview network because the prepod network is having issue
 
