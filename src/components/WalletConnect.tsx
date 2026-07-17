@@ -10,6 +10,12 @@ interface WalletConnectProps {
   error: string | null;
   connectWallet: (walletId?: string) => Promise<void>;
   disconnectWallet: () => Promise<void>;
+  balances: {
+    unshieldedNight: bigint;
+    shieldedNight: bigint;
+    dust: bigint;
+  } | null;
+  networkName: string;
 }
 
 const fadeUp = {
@@ -32,6 +38,8 @@ export const WalletConnect: React.FC<WalletConnectProps> = ({
   error,
   connectWallet,
   disconnectWallet,
+  balances,
+  networkName,
 }) => {
   return (
     <div className="wallet-panel">
@@ -68,7 +76,7 @@ export const WalletConnect: React.FC<WalletConnectProps> = ({
               letterSpacing: '0.05em',
             }}
           >
-            Preprod
+            {networkName}
           </motion.span>
         )}
       </motion.div>
@@ -199,6 +207,36 @@ export const WalletConnect: React.FC<WalletConnectProps> = ({
                 </div>
                 <div className="address-display__value">{shieldedAddress}</div>
               </motion.div>
+
+              {balances && (
+                <div style={{
+                  display: 'grid',
+                  gridTemplateColumns: '1fr 1fr 1fr',
+                  gap: '8px',
+                  marginTop: '12px',
+                  paddingTop: '12px',
+                  borderTop: '1px solid rgba(255,255,255,0.06)'
+                }}>
+                  <div style={{ textAlign: 'center' }}>
+                    <div style={{ fontSize: '9px', color: 'var(--text-dim)', textTransform: 'uppercase' }}>Unshielded</div>
+                    <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-white)' }}>
+                      {(Number(balances.unshieldedNight) / 1_000_000).toFixed(2)} tN
+                    </div>
+                  </div>
+                  <div style={{ textAlign: 'center' }}>
+                    <div style={{ fontSize: '9px', color: 'var(--text-dim)', textTransform: 'uppercase' }}>Shielded</div>
+                    <div style={{ fontSize: '12px', fontWeight: 600, color: '#a78bfa' }}>
+                      {(Number(balances.shieldedNight) / 1_000_000).toFixed(2)} tN
+                    </div>
+                  </div>
+                  <div style={{ textAlign: 'center' }}>
+                    <div style={{ fontSize: '9px', color: 'var(--text-dim)', textTransform: 'uppercase' }}>tDUST</div>
+                    <div style={{ fontSize: '12px', fontWeight: 600, color: '#fbbf24' }}>
+                      {balances.dust.toString()}
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
 
             <motion.button

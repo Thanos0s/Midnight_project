@@ -34,6 +34,11 @@ interface WalletState {
   walletName: string | null;
   error: string | null;
   contract: any | null;
+  balances: {
+    unshieldedNight: bigint;
+    shieldedNight: bigint;
+    dust: bigint;
+  } | null;
 }
 
 // ── Browser-native ZkConfigProvider ──
@@ -117,6 +122,7 @@ export const useMidnight = () => {
     walletName: null,
     error: null,
     contract: null,
+    balances: null,
   });
 
   const activeConfig = NETWORK_CONFIGS[networkName];
@@ -127,6 +133,24 @@ export const useMidnight = () => {
       const { unshieldedAddress: uAddr } = await api.getUnshieldedAddress();
       const { shieldedAddress: sAddr } = await api.getShieldedAddresses();
 
+      let unshieldedNight = 0n;
+      let shieldedNight = 0n;
+      let dust = 0n;
+
+      try {
+        const [unshieldedBals, shieldedBals, dustBal] = await Promise.all([
+          api.getUnshieldedBalances(),
+          api.getShieldedBalances(),
+          api.getDustBalance()
+        ]);
+        const nightTokenKey = '0000000000000000000000000000000000000000000000000000000000000000';
+        unshieldedNight = unshieldedBals[nightTokenKey] ?? 0n;
+        shieldedNight = shieldedBals[nightTokenKey] ?? 0n;
+        dust = dustBal?.balance ?? 0n;
+      } catch (balErr) {
+        console.warn('Failed to fetch wallet balances:', balErr);
+      }
+
       setState(prev => ({
         ...prev,
         isConnected: true,
@@ -135,6 +159,11 @@ export const useMidnight = () => {
         shieldedAddress: sAddr,
         walletName,
         error: null,
+        balances: {
+          unshieldedNight,
+          shieldedNight,
+          dust
+        }
       }));
 
       localStorage.setItem('midnight_wallet_connected', 'true');
@@ -304,6 +333,7 @@ export const useMidnight = () => {
       walletName: null,
       error: null,
       contract: null,
+      balances: null,
     });
     localStorage.removeItem('midnight_wallet_connected');
     localStorage.removeItem('midnight_wallet_id');
@@ -406,6 +436,7 @@ export const useMidnight = () => {
       walletName: null,
       error: null,
       contract: null,
+      balances: null,
     });
     localStorage.removeItem('midnight_wallet_connected');
     localStorage.removeItem('midnight_wallet_id');

@@ -293,6 +293,8 @@ export const App: React.FC = () => {
                   error={midnight.error}
                   connectWallet={midnight.connectWallet}
                   disconnectWallet={midnight.disconnectWallet}
+                  balances={midnight.balances}
+                  networkName={midnight.networkName}
                 />
 
                 {/* Auction Status and Badges */}
