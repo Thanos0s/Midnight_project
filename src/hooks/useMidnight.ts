@@ -177,6 +177,7 @@ export const useMidnight = () => {
           { indexerPublicDataProvider },
           { httpClientProofProvider },
           { setNetworkId },
+          { createProofProvider },
           { toHex, fromHex },
           ledger,
           HelloWorld
@@ -186,6 +187,7 @@ export const useMidnight = () => {
           import('@midnight-ntwrk/midnight-js-indexer-public-data-provider'),
           import('@midnight-ntwrk/midnight-js-http-client-proof-provider'),
           import('@midnight-ntwrk/midnight-js-network-id'),
+          import('@midnight-ntwrk/midnight-js-types'),
           import('@midnight-ntwrk/midnight-js-utils'),
           import('@midnight-ntwrk/ledger-v8'),
           import('../../managed/contract/index.js'),
@@ -197,7 +199,7 @@ export const useMidnight = () => {
         const publicDataProvider = indexerPublicDataProvider(activeConfig.indexer, activeConfig.indexerWS);
  
         const proofProvider = (typeof api.getProvingProvider === 'function')
-          ? await api.getProvingProvider(zkConfigProvider.asKeyMaterialProvider())
+          ? createProofProvider(await api.getProvingProvider(zkConfigProvider.asKeyMaterialProvider()))
           : httpClientProofProvider(activeConfig.proofServer, zkConfigProvider);
  
         const shieldedAddresses = await api.getShieldedAddresses();
@@ -395,6 +397,7 @@ export const useMidnight = () => {
         { indexerPublicDataProvider },
         { httpClientProofProvider },
         { setNetworkId },
+        { createProofProvider },
         { toHex, fromHex },
         ledger,
         HelloWorld
@@ -404,6 +407,7 @@ export const useMidnight = () => {
         import('@midnight-ntwrk/midnight-js-indexer-public-data-provider'),
         import('@midnight-ntwrk/midnight-js-http-client-proof-provider'),
         import('@midnight-ntwrk/midnight-js-network-id'),
+        import('@midnight-ntwrk/midnight-js-types'),
         import('@midnight-ntwrk/midnight-js-utils'),
         import('@midnight-ntwrk/ledger-v8'),
         import('../../managed/contract/index.js'),
@@ -415,7 +419,7 @@ export const useMidnight = () => {
       const publicDataProvider = indexerPublicDataProvider(activeConfig.indexer, activeConfig.indexerWS);
 
       const proofProvider = (typeof api.getProvingProvider === 'function')
-        ? await api.getProvingProvider(zkConfigProvider.asKeyMaterialProvider())
+        ? createProofProvider(await api.getProvingProvider(zkConfigProvider.asKeyMaterialProvider()))
         : httpClientProofProvider(activeConfig.proofServer, zkConfigProvider);
 
       const shieldedAddresses = await api.getShieldedAddresses();
