@@ -85,8 +85,12 @@ class BrowserZkConfigProvider {
 
 // ── Browser Private State Provider (localStorage) ──
 const browserPrivateStateProvider = {
-  get: async (key: string) => {
-    const val = localStorage.getItem(`midnight_state_${key}`);
+  contractAddress: null as string | null,
+  setContractAddress: function(address: any) {
+    this.contractAddress = address;
+  },
+  get: async function(key: string) {
+    const val = localStorage.getItem(`midnight_state_${this.contractAddress || 'default'}_${key}`);
     if (!val) return null;
     return JSON.parse(val, (k, v) => {
       // Re-hydrate custom serialized bigint objects
@@ -96,7 +100,7 @@ const browserPrivateStateProvider = {
       return v;
     });
   },
-  set: async (key: string, val: any) => {
+  set: async function(key: string, val: any) {
     const serialized = JSON.stringify(val, (k, v) => {
       // Intercept and format BigInt values for storage
       if (typeof v === 'bigint') {
@@ -104,11 +108,46 @@ const browserPrivateStateProvider = {
       }
       return v;
     });
-    localStorage.setItem(`midnight_state_${key}`, serialized);
+    localStorage.setItem(`midnight_state_${this.contractAddress || 'default'}_${key}`, serialized);
   },
-  delete: async (key: string) => {
-    localStorage.removeItem(`midnight_state_${key}`);
+  remove: async function(key: string) {
+    localStorage.removeItem(`midnight_state_${this.contractAddress || 'default'}_${key}`);
   },
+  clear: async function() {
+    const prefix = `midnight_state_${this.contractAddress || 'default'}_`;
+    const keysToRemove: string[] = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key && key.startsWith(prefix)) {
+        keysToRemove.push(key);
+      }
+    }
+    for (const key of keysToRemove) {
+      localStorage.removeItem(key);
+    }
+  },
+  setSigningKey: async function(address: any, signingKey: any) {
+    localStorage.setItem(`midnight_signing_key_${address}`, signingKey);
+  },
+  getSigningKey: async function(address: any) {
+    return localStorage.getItem(`midnight_signing_key_${address}`);
+  },
+  removeSigningKey: async function(address: any) {
+    localStorage.removeItem(`midnight_signing_key_${address}`);
+  },
+  clearSigningKeys: async function() {
+    const prefix = `midnight_signing_key_`;
+    const keysToRemove: string[] = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key && key.startsWith(prefix)) {
+        keysToRemove.push(key);
+      }
+    }
+    for (const key of keysToRemove) {
+      localStorage.removeItem(key);
+    }
+  }
 };
 
 // ── Hook ──
