@@ -85,6 +85,7 @@ It checks out the codebase, sets up Node.js v22, installs dependencies, compiles
 
 ## Product proposal
 Please Visit PROPOSAL.md
+https://github.com/Thanos0s/Midnight_project/blob/main/PROPOSAL.md
 
 
 
