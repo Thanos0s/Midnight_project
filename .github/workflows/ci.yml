@@ -31,8 +31,8 @@ jobs:
 
       - name: Compile contracts
         run: |
-          compact compile contracts/auction.compact managed
           compact compile contracts/counter.compact managed
+          compact compile contracts/auction.compact managed
 
       - name: Run test suite
         run: npm test
