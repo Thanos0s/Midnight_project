@@ -82,3 +82,13 @@ npm test
 ## CI/CD
 Our CI/CD pipeline runs automatically on GitHub Actions upon pushing to the `main` branch or opening a pull request.
 It checks out the codebase, sets up Node.js v22, installs dependencies, compiles the Compact contract, and runs our test suite containing 3 passing test suites verifying circuit logic, state transitions, and privacy.
+
+## Product proposal
+Please Visit PROPOSAL.md
+
+
+
+
+
+
+
