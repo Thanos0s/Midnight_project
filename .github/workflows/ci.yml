@@ -22,8 +22,15 @@ jobs:
       - name: Install dependencies
         run: npm install
 
+      - name: Install Compact compiler
+        run: |
+          curl --proto '=https' --tlsv1.2 -LsSf https://github.com/midnightntwrk/compact/releases/latest/download/compact-installer.sh | sh
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+
       - name: Compile contracts
-        run: npm run compile
+        run: |
+          compact compile contracts/auction.compact managed
+          compact compile contracts/counter.compact managed
 
       - name: Run test suite
         run: npm test
