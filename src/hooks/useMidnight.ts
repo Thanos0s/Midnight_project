@@ -281,11 +281,13 @@ export const useMidnight = () => {
         let instance;
         try {
           const contractAddress = localStorage.getItem('midnight_contract_address_' + networkName) || activeConfig.contractAddress;
-          instance = await findDeployedContract(providers as any, {
+          const realInstance = await findDeployedContract(providers as any, {
             compiledContract: compiledContract as any,
             contractAddress,
             privateStateId: 'hello-world-state',
           });
+          (realInstance as any).providers = providers;
+          instance = realInstance;
         } catch (contractErr: any) {
           console.warn('Real contract loading failed, falling back to mock contract for testing:', contractErr.message);
           instance = {
@@ -517,6 +519,7 @@ export const useMidnight = () => {
       activeConfig.contractAddress = contractAddress;
 
       const instance = deployed;
+      (instance as any).providers = providers;
 
       setState(prev => ({
         ...prev,
