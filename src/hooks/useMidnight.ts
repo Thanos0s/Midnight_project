@@ -97,6 +97,10 @@ const browserPrivateStateProvider = {
       if (v && typeof v === 'object' && v.type === 'BigInt') {
         return BigInt(v.value);
       }
+      // Cast legacy string or number bidAmount to BigInt to prevent type errors
+      if (k === 'bidAmount' && (typeof v === 'string' || typeof v === 'number')) {
+        return BigInt(v);
+      }
       return v;
     });
   },
