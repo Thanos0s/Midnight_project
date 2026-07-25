@@ -7,7 +7,7 @@
     "dev": "vite",
     "build": "tsc && vite build && npx esbuild managed/contract/index.js --bundle --format=esm --loader:.wasm=dataurl --outfile=dist/managed/contract/index.js",
     "preview": "vite preview",
-    "compile": "compact compile contracts/counter.compact managed && compact compile contracts/auction.compact managed && cp -r managed/* public/managed/",
+    "compile": "~/.local/bin/compact compile contracts/counter.compact managed && ~/.local/bin/compact compile contracts/auction.compact managed && cp -r managed/* public/managed/",
     "test": "node --test test.js",
     "proof:up": "docker compose up -d",
     "proof:down": "docker compose down"

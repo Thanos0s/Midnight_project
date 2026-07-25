@@ -44,7 +44,7 @@ interface WalletState {
 // ── Browser-native ZkConfigProvider ──
 class BrowserZkConfigProvider {
   async getZKIR(circuitId: string): Promise<any> {
-    const res = await fetch(`/managed/zkir/${circuitId}.zkir`);
+    const res = await fetch(`/managed/zkir/${circuitId}.bzkir`);
     if (!res.ok) throw new Error(`Failed to fetch ZKIR for ${circuitId}`);
     return new Uint8Array(await res.arrayBuffer());
   }
