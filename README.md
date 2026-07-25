@@ -13,7 +13,7 @@ https://drive.google.com/file/d/15I5xga2-4JeQ2upDpuIINJxlM3jP5YFh/view?usp=shari
 ## Contract Address
 | Network  | Address                          |
 |----------|----------------------------------|
-| Preprod  | `b20f8f836047ce33353b13e1e85d8dc95a55f306e876cb7b822bbaad4bb1acf6` |
+| Now working #Preprod  | `b20f8f836047ce33353b13e1e85d8dc95a55f306e876cb7b822bbaad4bb1acf6` |
 | Preview  | `2386353dac0e0fcb93203eee32cb1e8f14e04b924d84b41b9e8d3e8c99893a6a` |
 
 ## What This Does
