@@ -1,9 +1,9 @@
-pragma language_version >=0.2.0;
+pragma language_version >=0.22;
 
-import @stdlib/consensus;
+import CompactStandardLibrary;
 
-export ledger counter: Cell<Uint32>;
+export ledger counter: Counter;
 
 export circuit increment(): [] {
-  counter.write(counter.read() + 1);
+  counter.increment(1);
 }
