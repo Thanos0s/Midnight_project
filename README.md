@@ -13,8 +13,9 @@ https://drive.google.com/file/d/15I5xga2-4JeQ2upDpuIINJxlM3jP5YFh/view?usp=shari
 ## Contract Address
 | Network  | Address                          |
 |----------|----------------------------------|
-| Now working #Preprod  | `b20f8f836047ce33353b13e1e85d8dc95a55f306e876cb7b822bbaad4bb1acf6` |
+
 | Preview  | `2386353dac0e0fcb93203eee32cb1e8f14e04b924d84b41b9e8d3e8c99893a6a` |
+https://preview.midnightexplorer.com/contracts/0x2386353dac0e0fcb93203eee32cb1e8f14e04b924d84b41b9e8d3e8c99893a6a
 
 ## What This Does
 A sealed-bid auction where bidders submit bids secretly using zero-knowledge proofs. Bid values remain completely private during the bidding phase. When the auction host closes the auction, the winner's public key identity and the final winning price are proven and disclosed on-chain.
