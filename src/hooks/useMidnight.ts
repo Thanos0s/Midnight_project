@@ -7,7 +7,7 @@ const NETWORK_CONFIGS = {
     indexerWS: 'wss://indexer.preprod.midnight.network/api/v4/graphql/ws',
     node: 'https://rpc.preprod.midnight.network',
     proofServer: 'http://localhost:6300',
-    contractAddress: 'b20f8f836047ce33353b13e1e85d8dc95a55f306e876cb7b822bbaad4bb1acf6',
+    contractAddress: '42bb41cdbf156cccef4b9800c0c7818b1dab80655156564ebc5a18be7495c4d3',
   },
   preview: {
     indexer: 'https://indexer.preview.midnight.network/api/v4/graphql',
