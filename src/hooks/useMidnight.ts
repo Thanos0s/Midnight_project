@@ -44,7 +44,7 @@ interface WalletState {
 // ── Browser-native ZkConfigProvider ──
 class BrowserZkConfigProvider {
   async getZKIR(circuitId: string): Promise<any> {
-    const res = await fetch(`/managed/zkir/${circuitId}.zkir`);
+    const res = await fetch(`/managed/zkir/${circuitId}.bzkir`);
     if (!res.ok) throw new Error(`Failed to fetch ZKIR for ${circuitId}`);
     return new Uint8Array(await res.arrayBuffer());
   }
@@ -96,6 +96,10 @@ const browserPrivateStateProvider = {
       // Re-hydrate custom serialized bigint objects
       if (v && typeof v === 'object' && v.type === 'BigInt') {
         return BigInt(v.value);
+      }
+      // Cast legacy string or number bidAmount to BigInt to prevent type errors
+      if (k === 'bidAmount' && (typeof v === 'string' || typeof v === 'number')) {
+        return BigInt(v);
       }
       return v;
     });
@@ -270,7 +274,7 @@ export const useMidnight = () => {
           },
         };
  
-        const compiledContract = CompiledContract.make('hello-world', HelloWorld.Contract).pipe(
+        const compiledContract = CompiledContract.make('auction', HelloWorld.Contract).pipe(
           CompiledContract.withWitnesses({
             myBidAmount: (context: any) => [context.privateState, context.privateState.bidAmount],
           }),
@@ -281,11 +285,13 @@ export const useMidnight = () => {
         let instance;
         try {
           const contractAddress = localStorage.getItem('midnight_contract_address_' + networkName) || activeConfig.contractAddress;
-          instance = await findDeployedContract(providers as any, {
+          const realInstance = await findDeployedContract(providers as any, {
             compiledContract: compiledContract as any,
             contractAddress,
-            privateStateId: 'hello-world-state',
+            privateStateId: 'auction-state',
           });
+          (realInstance as any).providers = providers;
+          instance = realInstance;
         } catch (contractErr: any) {
           console.warn('Real contract loading failed, falling back to mock contract for testing:', contractErr.message);
           instance = {
@@ -490,20 +496,23 @@ export const useMidnight = () => {
         },
       };
 
-      const compiledContract = CompiledContract.make('hello-world', HelloWorld.Contract).pipe(
+      const compiledContract = CompiledContract.make('auction', HelloWorld.Contract).pipe(
         CompiledContract.withWitnesses({
           myBidAmount: (context: any) => [context.privateState, context.privateState.bidAmount],
         }),
         CompiledContract.withCompiledFileAssets('/managed')
       );
 
-      // Generate a random 32-byte ID for constructor
+      // Generate a random 32-byte ID for this auction (auction constructor arg)
       const randomId = new Uint8Array(32);
       crypto.getRandomValues(randomId);
 
+      console.log('[Deploy] Starting contract deployment on', networkName, '...');
+      console.log('[Deploy] Using 1AM wallet balanceTx for DUST payment');
+
       const deployed = await deployContract(providers as any, {
         compiledContract: compiledContract as any,
-        privateStateId: 'hello-world-state',
+        privateStateId: 'auction-state',
         initialPrivateState: {
           secretKey: new Uint8Array(32),
           bidAmount: 0n,
@@ -512,11 +521,18 @@ export const useMidnight = () => {
       });
 
       const contractAddress = deployed.deployTxData.public.contractAddress;
+      const txHash = deployed.deployTxData.public.txHash;
+      
+      console.log('🎉 [Deploy] CONTRACT DEPLOYED SUCCESSFULLY!');
+      console.log('📋 Contract Address:', contractAddress);
+      console.log('🔗 TX Hash:', txHash);
+      console.log('🌐 Network:', networkName);
       
       localStorage.setItem('midnight_contract_address_' + networkName, contractAddress);
       activeConfig.contractAddress = contractAddress;
 
       const instance = deployed;
+      (instance as any).providers = providers;
 
       setState(prev => ({
         ...prev,
@@ -525,7 +541,7 @@ export const useMidnight = () => {
         error: null,
       }));
 
-      return { contractAddress, txHash: deployed.deployTxData.public.txHash };
+      return { contractAddress, txHash };
     } catch (e: any) {
       const errMsg = e.message || e.toString() || 'Deployment failed';
       setState(prev => ({
