@@ -1,0 +1,38 @@
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Install Compact compiler
+        run: |
+          curl --proto '=https' --tlsv1.2 -LsSf https://github.com/midnightntwrk/compact/releases/latest/download/compact-installer.sh | sh
+          export PATH="$HOME/.local/bin:$PATH"
+          compact update
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+
+      - name: Compile contracts
+        run: |
+          compact compile contracts/counter.compact managed
+          compact compile contracts/auction.compact managed
+
+      - name: Run test suite
+        run: npm test
