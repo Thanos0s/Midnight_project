@@ -1,85 +1,96 @@
 # Midnight Private Bid Auction DApp
+![CI](https://github.com/Thanos0s/Midnight_project/actions/workflows/ci.yml/badge.svg)
 
 > Zero-knowledge sealed-bid auctions on the Midnight Network. Your bid, your secret.
 
 ## Live Demo
 https://midnight-project-ten.vercel.app/
 
+
+## Vidoe Link
+https://drive.google.com/file/d/15I5xga2-4JeQ2upDpuIINJxlM3jP5YFh/view?usp=sharing
+
 ## Contract Address
+| Network  | Address                          |
+|----------|----------------------------------|
 
-| Preview  | [`2386353dac0e0fcb93203eee32cb1e8f14e04b924d84b41b9e8d3e8c99893a6a`](https://preview.midnightexplorer.com/contracts/2386353dac0e0fcb93203eee32cb1e8f14e04b924d84b41b9e8d3e8c99893a6a) |
-| Preprod  | `b20f8f836047ce33353b13e1e85d8dc95a55f306e876cb7b822bbaad4bb1acf6` |
-
-##Used the preview network because the prepod network is having issue
+| Preview  | `2386353dac0e0fcb93203eee32cb1e8f14e04b924d84b41b9e8d3e8c99893a6a` |
+https://preview.midnightexplorer.com/contracts/0x2386353dac0e0fcb93203eee32cb1e8f14e04b924d84b41b9e8d3e8c99893a6a
 
 ## What This Does
-
 A sealed-bid auction where bidders submit bids secretly using zero-knowledge proofs. Bid values remain completely private during the bidding phase. When the auction host closes the auction, the winner's public key identity and the final winning price are proven and disclosed on-chain.
 
 ## Privacy Model
+- **PUBLIC:** Number of bids, active auction status, winning bidder's derived public key, and the final winning price (after close).
+- **PRIVATE:** Individual bid amounts and secret keys of bidders.
+- **PROVED without revealing:** The validity of bids (that bid value satisfies min-bid and bidder possesses valid secret key) without revealing the numeric value.
 
-| Category | What's Visible |
-|----------|---------------|
-| **PUBLIC** | Number of bids, auction status, winner identity (after close), winning price (after close) |
-| **PRIVATE** | Individual bid amounts, bidder secret keys |
-| **PROVEN** | Bid validity — without revealing the numeric value |
+### What an Observer Can Learn
+*   The total count of bids placed in the auction.
+*   The status of the auction (e.g., OPEN or CLOSED).
+*   The derived public key of the winning bidder *only after* the auction has been closed by the host.
+*   The final winning price *only after* the auction has been closed by the host.
+
+### What an Observer Cannot Learn
+*   The numeric bid values of individual bids during or after the auction (losing bid amounts are never revealed).
+*   The identity or public/private keys of losing bidders.
+*   The secret keys of any bidder (including the winner's secret key).
 
 ## Privacy Claim
-
-An on-chain observer during the auction phase can only see transactions occurring and the bid count incrementing. They cannot see how much was bid or who bid what amount. Once closed, only the winning price and winner's derived public key are revealed — individual losing bids and secret keys remain completely private.
+An on-chain observer during the active auction phase can only see transactions occurring and the bid count incrementing. They cannot see how much was bid or who bid what amount. Once closed, only the winning price and the winner's derived public key are revealed — individual losing bids and secret keys remain completely private.
 
 ## Tech Stack
-
 - **Network:** Midnight Preprod
-- **Contract:** Compact
-- **SDK:** Midnight.js
-- **Wallet:** 1AM Wallet (DApp Connector API v4)
+- **Contract:** Compact compiler v0.16.0
+- **SDK:** Midnight.js v4.0.4
+- **Wallet:** 1AM Wallet / 1am-preview (DApp Connector API v4)
 - **Frontend:** React + Vite + TypeScript
 - **Animations:** Framer Motion
 
 ## Prerequisites
+- [1AM Wallet](https://1am.io) browser extension installed and configured for Midnight Preprod or Preview.
+- Node.js v22+ and npm.
 
-- [1AM Wallet](https://1am.io) browser extension on Midnight Preprod
-- Node.js v22+ and Yarn
+## Setup & Run Locally
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/Thanos0s/Midnight_project.git
+   ```
+2. Navigate to the project directory:
+   ```bash
+   cd Midnight_project
+   ```
+3. Install dependencies:
+   ```bash
+   npm install
+   ```
+4. Compile the contract:
+   ```bash
+   npm run compile
+   ```
+5. Run the local development server:
+   ```bash
+   npm run dev
+   ```
 
-## Run Locally
+Open [http://localhost:3000/](http://localhost:3000/) in your browser.
 
+## Run Tests
 ```bash
-git clone https://github.com/Thanos0s/Midnight_project.git
-cd Midnight_project
-yarn install
-yarn dev
+npm test
 ```
 
-Open `http://localhost:3000` in your browser.
+## CI/CD
+Our CI/CD pipeline runs automatically on GitHub Actions upon pushing to the `main` branch or opening a pull request.
+It checks out the codebase, sets up Node.js v22, installs dependencies, compiles the Compact contract, and runs our test suite containing 3 passing test suites verifying circuit logic, state transitions, and privacy.
 
-## Demo Video
+## Product proposal
+Please Visit PROPOSAL.md
+https://github.com/Thanos0s/Midnight_project/blob/main/PROPOSAL.md
 
-https://drive.google.com/file/d/13XFDuUnzI2TqIMR1Ju4jUzR-w4nIjG3_/view?usp=sharing
 
-## Project Requirements & Submission Checklist
 
-This project was built to meet the following criteria:
 
-### Core Requirements
-- **1AM Wallet Connect / Disconnect:** Successfully implemented.
-- **Circuit Integration:** Circuit called successfully from the frontend with result handling.
-- **Observable Privacy Behavior:** Privacy claim proven without revealing private data.
-- **Preprod Deployment:** Contract deployed to Preprod with a verifiable address.
-- **Commits:** Minimum of 8 meaningful commits.
 
-### 1. UX and Error Handling
-- **Loading States:** UI displays loading indicators while waiting for 1AM wallet connection, generating the ZK proof, and waiting for the transaction to confirm on-chain.
-- **Error Handling:** Graceful error handling when a user rejects the 1AM wallet connection, has insufficient funds, or a circuit call fails.
 
-### 2. Code Quality and Structure
-- **Separation of Concerns:** UI components are separated from the Midnight.js SDK interaction logic.
-- **Clean Code:** Code is clean and free of excessive `console.log` statements or dead code.
 
-### 3. README and Documentation
-- **Local Setup & .env Configuration:** Proper configuration steps are provided to run the UI locally.
-- **Smart Contract Source:** `.compact` source code and compiled artifacts are included in the repository.
-- **Testing Instructions:** Instructions on how to test locally.
-
-### 4. Open Source
-- **License File:** An open-source license (MIT) has been added to clarify terms of use.
